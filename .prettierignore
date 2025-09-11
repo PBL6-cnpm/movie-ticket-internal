@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+.pnpm
+
+# Build outputs
+dist
+build
+.vite
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/settings.json
+.idea
+
+# Generated
+coverage
+*.tsbuildinfo
