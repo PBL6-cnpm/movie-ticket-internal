@@ -45,10 +45,10 @@ const HomeSection = () => {
                     </div>
 
                     <div className="card p-4">
-                        <div className="text-primary font-bold text-lg mb-2">Customer</div>
+                        <div className="text-primary font-bold text-lg mb-2">Admin</div>
                         <p className="text-sm text-secondary mb-2">Book tickets & browse movies</p>
                         <p className="text-xs font-mono bg-surface text-secondary p-2 rounded">
-                            user@example.com
+                            admin@example.com
                         </p>
                         <p className="text-xs font-mono bg-surface text-secondary p-2 rounded mt-1">
                             123456
