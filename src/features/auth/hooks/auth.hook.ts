@@ -57,8 +57,10 @@ export const useAuth = () => {
                 const accountWithDetails: AccountResponse = {
                     id: account.id,
                     branchId: account.branchId,
+
                     coin: account.coin,
                     email: account.email,
+
                     roleNames: account.roleNames,
                     status: account.status
                 }
