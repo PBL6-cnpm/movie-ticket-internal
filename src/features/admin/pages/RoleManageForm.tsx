@@ -1,6 +1,6 @@
 import type { PermissionInRole, Role, RoleResponse } from '@/features/auth/types/role.type'
 import { getPermissionByRoleId, savePermissionByRoleId } from '@/shared/api/permission-api'
-import { getAllRole } from '@/shared/api/role-api'
+import { createNewRole, deleteRole, getAllRole } from '@/shared/api/role-api'
 import Button from '@/shared/components/ui/button'
 import {
     Card,
@@ -10,6 +10,7 @@ import {
     CardTitle
 } from '@/shared/components/ui/card'
 import { Checkbox } from '@/shared/components/ui/checkbox'
+import { Input } from '@/shared/components/ui/input'
 import {
     Select,
     SelectContent,
@@ -27,6 +28,9 @@ const RoleManageForm: React.FC = () => {
     const [roles, setRoles] = useState<Role[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const [apiPermissions, setApiPermissions] = useState<PermissionInRole[]>([])
+    const [newRoleName, setNewRoleName] = useState<string>('')
+    const [isCreatingRole, setIsCreatingRole] = useState<boolean>(false)
+    const [isDeletingRole, setIsDeletingRole] = useState<boolean>(false)
 
     // Function to group API permissions by module (based on first word of permission name)
     const getApiPermissionsByModule = () => {
@@ -151,6 +155,100 @@ const RoleManageForm: React.FC = () => {
 
         setRolePermissions(newPermissions)
         setHasChanges(true)
+    }
+
+    const handleCreateRole = async () => {
+        if (!newRoleName.trim()) {
+            alert('Vui lòng nhập tên role')
+            return
+        }
+
+        setIsCreatingRole(true)
+        try {
+            console.log('Creating new role:', newRoleName)
+
+            const response = await createNewRole(newRoleName.trim())
+
+            if (!response) {
+                console.error('Error creating role')
+                alert('Có lỗi xảy ra khi tạo role')
+            }
+
+            if (!response.data && !response.data.success) {
+                console.error('Error creating role')
+                alert('Có lỗi xảy ra khi tạo role')
+            }
+
+            const roleResponse = response.data.data
+
+            const newRole: Role = {
+                id: roleResponse.id,
+                name: roleResponse.name
+            }
+
+            setRoles((prevRoles) => [...prevRoles, newRole])
+            setNewRoleName('')
+
+            alert(`Role "${newRole.name}" đã được tạo thành công!`)
+
+            // Auto-select the new role
+            setSelectedRoleId(newRole.id)
+            setSelectedRoleName(newRole.name)
+        } catch (error) {
+            console.error('Error creating role:', error)
+            alert('Có lỗi xảy ra khi tạo role')
+        } finally {
+            setIsCreatingRole(false)
+        }
+    }
+
+    const handleDeleteRole = async () => {
+        if (!selectedRoleId || !selectedRoleName) {
+            alert('Vui lòng chọn role để xóa')
+            return
+        }
+
+        // Confirm deletion
+        const confirmDelete = window.confirm(
+            `Bạn có chắc chắn muốn xóa role "${selectedRoleName}"?\n\nHành động này không thể hoàn tác.`
+        )
+
+        if (!confirmDelete) return
+
+        setIsDeletingRole(true)
+        try {
+            // Simulate API call - replace with actual deleteRole API call
+            console.log('Deleting role:', selectedRoleId, selectedRoleName)
+
+            console.log(selectedRoleId)
+
+            const response = await deleteRole(selectedRoleId)
+
+            console.log(response)
+
+            // Remove role from local state
+            const updatedRoles = roles.filter((role) => role.id !== selectedRoleId)
+            setRoles(updatedRoles)
+
+            // Select first role if available, otherwise clear
+            if (updatedRoles.length > 0) {
+                setSelectedRoleId(updatedRoles[0].id)
+                setSelectedRoleName(updatedRoles[0].name)
+            } else {
+                setSelectedRoleId('')
+                setSelectedRoleName('')
+                setApiPermissions([])
+                setRolePermissions([])
+            }
+            setHasChanges(false)
+
+            alert(`Role "${selectedRoleName}" đã được xóa thành công!`)
+        } catch (error) {
+            console.error('Error deleting role:', error)
+            alert('Có lỗi xảy ra khi xóa role')
+        } finally {
+            setIsDeletingRole(false)
+        }
     }
 
     const handleSaveChanges = async () => {
@@ -290,18 +388,57 @@ const RoleManageForm: React.FC = () => {
                                     </Select>
                                 </div>
 
+                                {/* Create New Role Section */}
+                                <div className="border-t border-surface pt-4">
+                                    <label className="text-sm font-medium text-primary block mb-2">
+                                        Hoặc tạo role mới
+                                    </label>
+                                    <div className="flex space-x-2">
+                                        <Input
+                                            type="text"
+                                            placeholder="Nhập tên role mới..."
+                                            value={newRoleName}
+                                            onChange={(e) => setNewRoleName(e.target.value)}
+                                            className="flex-1 bg-brand border-surface text-primary placeholder:text-secondary"
+                                            disabled={isCreatingRole}
+                                        />
+                                        <Button
+                                            onClick={handleCreateRole}
+                                            disabled={isCreatingRole || !newRoleName.trim()}
+                                            className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
+                                        >
+                                            {isCreatingRole ? 'Đang tạo...' : 'Tạo Role'}
+                                        </Button>
+                                    </div>
+                                </div>
+
                                 {selectedRole && (
                                     <div className="p-4 bg-brand border border-primary/20 rounded-lg">
-                                        <h4 className="font-medium text-brand-primary">
-                                            {selectedRole.name}
-                                        </h4>
-                                        <p className="text-sm text-primary">{'Không có mô tả'}</p>
-                                        <p className="text-xs text-brand-secondary mt-2">
-                                            Hiện tại có{' '}
-                                            {apiPermissions.filter((p) => p.isHas).length ||
-                                                rolePermissions.length}{' '}
-                                            quyền được cấp
-                                        </p>
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <h4 className="font-medium text-brand-primary">
+                                                    {selectedRole.name}
+                                                </h4>
+                                                <p className="text-sm text-primary">
+                                                    {'Không có mô tả'}
+                                                </p>
+                                                <p className="text-xs text-brand-secondary mt-2">
+                                                    Hiện tại có{' '}
+                                                    {apiPermissions.filter((p) => p.isHas).length ||
+                                                        rolePermissions.length}{' '}
+                                                    quyền được cấp
+                                                </p>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleDeleteRole}
+                                                disabled={isDeletingRole}
+                                                className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white ml-4"
+                                            >
+                                                {isDeletingRole ? 'Đang xóa...' : 'Xóa Role'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
