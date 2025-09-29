@@ -1,85 +1,20 @@
+import * as authApi from '@/shared/api/auth-api'
 import { useAuthStore } from '../stores/auth.store'
 import type {
+    AccountResponse,
+    AxiosErrorResponse,
     LoginCredentials,
-    RegisterCredentials,
-    Role,
-    User,
-    UserWithDetails
+    RegisterApiResponse,
+    RegisterCredentials
 } from '../types/auth.type'
-import {
-    ROLE_IDS,
-    getPermissionsByRoleId,
-    validateEmail,
-    validatePassword
-} from '../utils/auth.utils'
+import { validateEmail, validatePassword } from '../utils/auth.utils'
 
-// Mock users database with database-like structure
-const MOCK_USERS: Array<{
-    email: string
-    password: string
-    user: User & { role: Role }
-}> = [
-    {
-        email: 'admin@example.com',
-        password: '123456',
-        user: {
-            account_id: 'acc_001',
-            branch_id: 'branch_001',
-            email: 'admin@example.com',
-            coin: 1000,
-            status: true,
-            role_id: ROLE_IDS.ADMIN,
-            role: {
-                role_id: ROLE_IDS.ADMIN,
-                roleName: 'admin'
-            },
-            name: 'Admin User',
-            avatar: 'https://ui-avatars.com/api/?name=Admin+User&background=ef4444&color=fff',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }
-    },
-    {
-        email: 'employee@example.com',
-        password: '123456',
-        user: {
-            account_id: 'acc_002',
-            branch_id: 'branch_001',
-            email: 'employee@example.com',
-            coin: 500,
-            status: true,
-            role_id: ROLE_IDS.EMPLOYEE,
-            role: {
-                role_id: ROLE_IDS.EMPLOYEE,
-                roleName: 'employee'
-            },
-            name: 'Employee User',
-            avatar: 'https://ui-avatars.com/api/?name=Employee+User&background=3b82f6&color=fff',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }
-    },
-    {
-        email: 'user@example.com',
-        password: '123456',
-        user: {
-            account_id: 'acc_003',
-            branch_id: 'branch_001',
-            email: 'user@example.com',
-            coin: 100,
-            status: true,
-            role_id: ROLE_IDS.USER,
-            role: {
-                role_id: ROLE_IDS.USER,
-                roleName: 'user'
-            },
-            name: 'Charos',
-            avatar: 'https://ui-avatars.com/api/?name=Regular+User&background=10b981&color=fff',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        }
-    }
-]
+// Mock users database - keeping for reference but not used in production
+// const MOCK_USERS: Array<{
+//     email: string
+//     password: string
+//     user: User & { role: Role }
+// }> = [...]
 
 export const useAuth = () => {
     const {
@@ -107,34 +42,54 @@ export const useAuth = () => {
                 throw new Error('Password must be at least 6 characters')
             }
 
-            const mockUser = MOCK_USERS.find(
-                (u) => u.email === credentials.email && u.password === credentials.password
-            )
+            // Call the actual API
+            const response = await authApi.login(credentials.email, credentials.password)
 
-            if (!mockUser) {
-                throw new Error('Invalid email or password')
+            if (response && response.data) {
+                const data = response.data.data
+                console.log(data)
+
+                if (!data || !data.accessToken) return
+
+                const account = data.account
+
+                // Create account with details from API response
+                const accountWithDetails: AccountResponse = {
+                    id: account.id,
+                    branchId: account.branchId,
+                    coin: account.coin,
+                    email: account.email,
+                    roleNames: account.roleNames,
+                    status: account.status
+                }
+
+                login(accountWithDetails, {
+                    accessToken: data.accessToken,
+                    refreshToken: 'refreshToken'
+                })
+
+                return { success: true, user: accountWithDetails }
+            } else {
+                throw new Error('Invalid response from server')
+            }
+        } catch (error: unknown) {
+            let errorMessage = 'Login failed'
+
+            // Handle different types of errors from API
+            const axiosError = error as AxiosErrorResponse
+
+            if (axiosError.response?.data?.message) {
+                errorMessage = axiosError.response.data.message
+            } else if (axiosError.response?.status === 401) {
+                errorMessage = 'Invalid email or password'
+            } else if (axiosError.response?.status === 403) {
+                errorMessage = 'Account is deactivated'
+            } else if (axiosError.message) {
+                errorMessage = axiosError.message
+            } else if (error instanceof Error) {
+                errorMessage = error.message
             }
 
-            if (!mockUser.user.status) {
-                throw new Error('Account is deactivated')
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-
-            // Use helper function to get permissions safely
-            const userWithDetails: UserWithDetails = {
-                ...mockUser.user,
-                permissions: getPermissionsByRoleId(mockUser.user.role_id)
-            }
-
-            login(userWithDetails, {
-                accessToken: `mock-access-token-${mockUser.user.role_id}`,
-                refreshToken: `mock-refresh-token-${mockUser.user.role_id}`
-            })
-
-            return { success: true, user: userWithDetails }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Login failed'
             setError(errorMessage)
             return { success: false, error: errorMessage }
         } finally {
@@ -159,39 +114,37 @@ export const useAuth = () => {
                 throw new Error('Passwords do not match')
             }
 
-            const existingUser = MOCK_USERS.find((u) => u.email === credentials.email)
-            if (existingUser) {
-                throw new Error('User with this email already exists')
+            if (!credentials.name || credentials.name.trim().length === 0) {
+                throw new Error('Full name is required')
             }
 
-            await new Promise((resolve) => setTimeout(resolve, 1000))
+            // Call the actual API
+            const response = await authApi.register(
+                credentials.email,
+                credentials.password,
+                credentials.name
+            )
 
-            const newUser: UserWithDetails = {
-                account_id: `acc_${Date.now()}`,
-                branch_id: credentials.branch_id || 'branch_001',
-                email: credentials.email,
-                coin: 50,
-                status: true,
-                role_id: ROLE_IDS.USER,
-                role: {
-                    role_id: ROLE_IDS.USER,
-                    roleName: 'user'
-                },
-                permissions: getPermissionsByRoleId(ROLE_IDS.USER),
-                name: credentials.name || 'New User',
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(credentials.name || 'New User')}&background=6366f1&color=fff`,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+            if (response && response.data) {
+                const registerData: RegisterApiResponse = response.data
+                return { success: true, data: registerData }
+            } else {
+                throw new Error('Invalid response from server')
+            }
+        } catch (error: unknown) {
+            let errorMessage = 'Registration failed'
+
+            // Handle different types of errors from API
+            const axiosError = error as AxiosErrorResponse
+
+            if (axiosError.response?.data?.message) {
+                errorMessage = axiosError.response.data.message
+            } else if (axiosError.message) {
+                errorMessage = axiosError.message
+            } else if (error instanceof Error) {
+                errorMessage = error.message
             }
 
-            login(newUser, {
-                accessToken: 'mock-access-token-3',
-                refreshToken: 'mock-refresh-token-3'
-            })
-
-            return { success: true }
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Registration failed'
             setError(errorMessage)
             return { success: false, error: errorMessage }
         } finally {

@@ -1,10 +1,10 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import type { AuthState, UserWithDetails } from '../types/auth.type'
+import type { AccountResponse, AuthState } from '../types/auth.type'
 
 interface AuthStore extends Omit<AuthState, 'user'> {
-    user: UserWithDetails | null
-    login: (user: UserWithDetails, tokens: { accessToken: string; refreshToken: string }) => void
+    user: AccountResponse | null
+    login: (user: AccountResponse, tokens: { accessToken: string; refreshToken: string }) => void
     logout: () => void
     setLoading: (loading: boolean) => void
     setError: (error: string | null) => void
