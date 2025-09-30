@@ -46,7 +46,7 @@ export interface RegisterCredentials {
     password: string
     confirmPassword: string
     branch_id?: string
-    name?: string // For display purposes
+    name: string // Required full name
 }
 
 export interface AuthState {
@@ -74,3 +74,50 @@ export type AuthAction =
     | { type: 'AUTH_ERROR'; payload: string }
     | { type: 'LOGOUT' }
     | { type: 'CLEAR_ERROR' }
+
+// API Response interfaces
+export interface ApiError {
+    message: string
+    statusCode?: number
+    code?: string
+}
+
+export interface ApiResponse<T> {
+    data: T
+    success?: boolean
+    message?: string
+}
+
+export interface LoginApiResponse {
+    accessToken?: string
+    refreshToken?: string
+}
+
+export interface AccountResponse {
+    id?: string
+    branchId?: string
+    email?: string
+    coin?: number
+    status?: string
+    roleNames?: string[]
+    name?: string
+    avatar?: string
+    createdAt?: string
+    updatedAt?: string
+}
+
+export interface RegisterApiResponse {
+    message?: string
+    user?: Partial<User> & { fullName: string }
+    success?: boolean
+    fullName?: string
+}
+
+export interface AxiosErrorResponse {
+    response?: {
+        data?: ApiError
+        status?: number
+        statusText?: string
+    }
+    message?: string
+}

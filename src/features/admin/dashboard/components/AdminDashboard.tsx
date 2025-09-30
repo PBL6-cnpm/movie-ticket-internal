@@ -71,11 +71,11 @@ const AdminDashboard = () => {
                     <div className="text-center text-gray-600">
                         <p className="mb-2">You have full administrative access</p>
                         <div className="flex justify-center gap-4 text-sm">
-                            <span>Account: {user?.account_id}</span>
+                            <span>Account:</span>
                             <span>•</span>
-                            <span>Branch: {user?.branch_id}</span>
+                            <span>Branch:</span>
                             <span>•</span>
-                            <span>Coins: {user?.coin}</span>
+                            <span>Coins:</span>
                         </div>
                     </div>
                 </CardContent>
