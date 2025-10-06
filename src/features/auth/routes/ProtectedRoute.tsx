@@ -2,7 +2,12 @@
 
 import type { ReactNode } from 'react'
 import { useAuth } from '../hooks/auth.hook'
-import { hasPermission, hasRole } from '../utils/auth.utils'
+import {
+    hasPermission,
+    hasRole,
+    mapAccountResponseToUser,
+    mapAccountResponseToUserWithDetails
+} from '../utils/auth.utils'
 
 interface ProtectedRouteProps {
     children: ReactNode
@@ -17,7 +22,7 @@ const ProtectedRoute = ({
     requiredPermissions = [],
     fallback = <div>Access Denied</div>
 }: ProtectedRouteProps) => {
-    const { user, isAuthenticated, isLoading } = useAuth()
+    const { user: accountUser, isAuthenticated, isLoading } = useAuth()
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-64">Loading...</div>
@@ -27,6 +32,9 @@ const ProtectedRoute = ({
         return <div>Please login to access this page</div>
     }
 
+    // Convert AccountResponse to User for role checking
+    const user = mapAccountResponseToUser(accountUser)
+
     // Check roles
     if (requiredRoles.length > 0) {
         const hasRequiredRole = requiredRoles.some((role) => hasRole(user, role))
@@ -35,10 +43,17 @@ const ProtectedRoute = ({
         }
     }
 
-    // Check permissions - fixed to use correct function signature
+    // Check permissions - convert to UserWithDetails for permission checking
     if (requiredPermissions.length > 0) {
-        const hasRequiredPermission = requiredPermissions.every(
-            (permissionName) => hasPermission(user, permissionName) // Now uses 2 parameters as expected
+        if (!accountUser) {
+            return <>{fallback}</>
+        }
+        const userWithDetails = mapAccountResponseToUserWithDetails(accountUser)
+        if (!userWithDetails) {
+            return <>{fallback}</>
+        }
+        const hasRequiredPermission = requiredPermissions.every((permissionName) =>
+            hasPermission(userWithDetails, permissionName)
         )
         if (!hasRequiredPermission) {
             return <>{fallback}</>

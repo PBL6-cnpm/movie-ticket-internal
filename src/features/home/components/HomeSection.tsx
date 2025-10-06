@@ -8,12 +8,13 @@ const HomeSection = () => {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            // Auto redirect based on role
-            if (user.role?.roleName === 'admin') {
+            // Auto redirect based on role - use roleNames array from AccountResponse
+            const primaryRole = user.roleNames?.[0]
+            if (primaryRole === 'admin') {
                 window.location.href = '/admin'
-            } else if (user.role?.roleName === 'employee') {
+            } else if (primaryRole === 'employee') {
                 window.location.href = '/employee'
-            } else if (user.role?.roleName === 'user') {
+            } else if (primaryRole === 'user') {
                 window.location.href = '/customer'
             }
         }

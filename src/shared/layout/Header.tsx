@@ -2,11 +2,15 @@
 
 import { useState } from 'react'
 import { useAuth } from '../../features/auth/hooks/auth.hook'
+import { mapAccountResponseToUser } from '../../features/auth/utils/auth.utils'
 import { DesktopHeader, MobileHeader } from '../components/header'
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const { user, isAuthenticated } = useAuth()
+    const { user: accountUser, isAuthenticated } = useAuth()
+
+    // Convert AccountResponse to User
+    const user = mapAccountResponseToUser(accountUser)
 
     const handleMobileMenuToggle = () => {
         setMobileMenuOpen(!mobileMenuOpen)

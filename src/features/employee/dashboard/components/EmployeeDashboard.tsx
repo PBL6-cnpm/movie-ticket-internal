@@ -71,9 +71,9 @@ const EmployeeDashboard = () => {
                     <div className="text-center text-gray-600">
                         <p className="mb-2">You can assist customers and manage daily operations</p>
                         <div className="flex justify-center gap-4 text-sm">
-                            <span>Account: {user?.account_id}</span>
+                            <span>Account: {user?.id}</span>
                             <span>•</span>
-                            <span>Branch: {user?.branch_id}</span>
+                            <span>Branch: {user?.branchId}</span>
                             <span>•</span>
                             <span>Coins: {user?.coin}</span>
                         </div>
