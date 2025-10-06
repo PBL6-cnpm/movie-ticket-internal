@@ -1,6 +1,54 @@
-import type { Permission, User, UserWithDetails } from '../types/auth.type'
+import type { AccountResponse, Permission, User, UserWithDetails } from '../types/auth.type'
 
-export const hasPermission = (user: UserWithDetails | null, permissionName: string): boolean => {
+// Mapping utilities to convert AccountResponse to User types
+export const mapAccountResponseToUser = (account: AccountResponse | null): User | null => {
+    if (!account) return null
+
+    return {
+        account_id: account.id || '',
+        branch_id: account.branchId,
+        email: account.email || '',
+        coin: account.coin || 0,
+        status: account.status === 'active' || account.status === 'ACTIVE',
+        role_id:
+            account.roleNames?.[0] === 'admin' ? 1 : account.roleNames?.[0] === 'employee' ? 2 : 3,
+        name: account.name,
+        avatar: account.avatar,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+        role: account.roleNames?.[0]
+            ? {
+                  role_id:
+                      account.roleNames[0] === 'admin'
+                          ? 1
+                          : account.roleNames[0] === 'employee'
+                            ? 2
+                            : 3,
+                  roleName: account.roleNames[0]
+              }
+            : undefined
+    }
+}
+
+export const mapAccountResponseToUserWithDetails = (
+    account: AccountResponse | null
+): UserWithDetails | null => {
+    if (!account) return null
+
+    const baseUser = mapAccountResponseToUser(account)
+    if (!baseUser) return null
+
+    return {
+        ...baseUser,
+        role: baseUser.role || {
+            role_id: baseUser.role_id,
+            roleName: account.roleNames?.[0] || 'user'
+        },
+        permissions: [] // Default empty permissions - would need to be populated from API
+    }
+}
+
+export const hasPermission = (user: UserWithDetails, permissionName: string): boolean => {
     if (!user || !user.permissions) return false
     return user.permissions.some((permission) => permission.permissionName === permissionName)
 }
