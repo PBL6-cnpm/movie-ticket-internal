@@ -8,6 +8,7 @@ import { rootRoute } from './shared/routes/__root'
 
 // Create the route tree
 export const routeTree = rootRoute.addChildren([
+    homeRoute,
     loginRoute,
     registerRoute,
     forgotPasswordRoute,
