@@ -1,6 +1,6 @@
+import { useAuth } from '@/features/auth/hooks/auth.hook'
 import type { Account } from '@/features/auth/types/account.type'
 import { checkRole, Roles } from '@/features/auth/utils/role.util'
-import { useAuth } from '../../../../../movie-ticket-web/src/features/auth/hooks/auth.hook'
 import SearchBar from './SearchBar'
 
 interface MobileHeaderProps {
