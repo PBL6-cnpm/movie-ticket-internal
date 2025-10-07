@@ -2,7 +2,7 @@ export default function Logo() {
     return (
         <div className="flex items-center">
             <a href="/" className="flex items-center gap-2">
-                <span className="text-2xl">🎬</span>
+                <span className="text-2xl"></span>
                 <span
                     className="text-xl font-semibold text-brand-primary"
                     style={{
@@ -10,7 +10,7 @@ export default function Logo() {
                         letterSpacing: '-0.01em'
                     }}
                 >
-                    CinemaBook
+                    CinesTech
                 </span>
             </a>
         </div>

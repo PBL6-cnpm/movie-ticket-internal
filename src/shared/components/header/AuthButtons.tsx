@@ -2,7 +2,6 @@ interface AuthButtonsProps {
     onLogin?: () => void
     onSignup?: () => void
 }
-
 export default function AuthButtons({ onLogin, onSignup }: AuthButtonsProps) {
     return (
         <div className="hidden md:flex items-center gap-4">
@@ -14,7 +13,7 @@ export default function AuthButtons({ onLogin, onSignup }: AuthButtonsProps) {
                 Login
             </a>
             <a href="/register" className="btn-primary text-sm" onClick={onSignup}>
-                Sign Up
+                Register
             </a>
         </div>
     )

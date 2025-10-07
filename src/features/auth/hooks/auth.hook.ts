@@ -1,24 +1,21 @@
 import * as authApi from '@/shared/api/auth-api'
 import { useAuthStore } from '../stores/auth.store'
+import type { Account } from '../types/account.type'
 import type {
-    AccountResponse,
-    AxiosErrorResponse,
     LoginCredentials,
-    RegisterApiResponse,
-    RegisterCredentials
+    RegisterCredentials,
+    ResendVerificationEmailCredentials
 } from '../types/auth.type'
-import { validateEmail, validatePassword } from '../utils/auth.utils'
-
-// Mock users database - keeping for reference but not used in production
-// const MOCK_USERS: Array<{
-//     email: string
-//     password: string
-//     user: User & { role: Role }
-// }> = [...]
+import type {
+    ApiResponse,
+    AxiosErrorResponse,
+    AxiosSuccessResponse
+} from '../types/base-response.type'
+import { validateEmail, validatePassword } from '../utils/auth.util'
 
 export const useAuth = () => {
     const {
-        user,
+        account,
         isLoading,
         isAuthenticated,
         error,
@@ -29,7 +26,9 @@ export const useAuth = () => {
         clearError
     } = useAuthStore()
 
-    const handleLogin = async (credentials: LoginCredentials) => {
+    const handleLogin = async (
+        credentials: LoginCredentials
+    ): Promise<AxiosSuccessResponse<Account | string> | AxiosErrorResponse> => {
         try {
             setLoading(true)
             clearError()
@@ -43,63 +42,47 @@ export const useAuth = () => {
             }
 
             // Call the actual API
-            const response = await authApi.login(credentials.email, credentials.password)
+            const data = (await authApi.login(credentials.email, credentials.password)).data.data
 
-            if (response && response.data) {
-                const data = response.data.data
-                console.log(data)
+            console.log('Login API response:', data.message)
 
-                if (!data || !data.accessToken) return
+            console.log('Login successful:', data)
 
-                const account = data.account
+            login(data.account, data.accessToken)
 
-                // Create account with details from API response
-                const accountWithDetails: AccountResponse = {
-                    id: account.id,
-                    branchId: account.branchId,
-
-                    coin: account.coin,
-                    email: account.email,
-
-                    roleNames: account.roleNames,
-                    status: account.status
+            if (data.message) {
+                return {
+                    success: true,
+                    message: data.message,
+                    data: data.account
                 }
+            }
 
-                login(accountWithDetails, {
-                    accessToken: data.accessToken,
-                    refreshToken: 'refreshToken'
-                })
-
-                return { success: true, user: accountWithDetails }
-            } else {
-                throw new Error('Invalid response from server')
+            return {
+                success: true,
+                data: data.account
             }
         } catch (error: unknown) {
-            let errorMessage = 'Login failed'
+            const apiError = error as ApiResponse<null>
+            const errorMessage = apiError.message || 'Login failed'
 
-            // Handle different types of errors from API
-            const axiosError = error as AxiosErrorResponse
+            console.log('Login error:', errorMessage)
 
-            if (axiosError.response?.data?.message) {
-                errorMessage = axiosError.response.data.message
-            } else if (axiosError.response?.status === 401) {
-                errorMessage = 'Invalid email or password'
-            } else if (axiosError.response?.status === 403) {
-                errorMessage = 'Account is deactivated'
-            } else if (axiosError.message) {
-                errorMessage = axiosError.message
-            } else if (error instanceof Error) {
-                errorMessage = error.message
+            setError('Login failed')
+
+            return {
+                success: false,
+                statusCode: apiError.statusCode,
+                message: errorMessage
             }
-
-            setError(errorMessage)
-            return { success: false, error: errorMessage }
         } finally {
             setLoading(false)
         }
     }
 
-    const handleRegister = async (credentials: RegisterCredentials) => {
+    const handleRegister = async (
+        credentials: RegisterCredentials
+    ): Promise<AxiosSuccessResponse<Account> | AxiosErrorResponse> => {
         try {
             setLoading(true)
             clearError()
@@ -116,39 +99,68 @@ export const useAuth = () => {
                 throw new Error('Passwords do not match')
             }
 
-            if (!credentials.name || credentials.name.trim().length === 0) {
+            if (!credentials.fullName || credentials.fullName.trim().length === 0) {
                 throw new Error('Full name is required')
             }
 
             // Call the actual API
-            const response = await authApi.register(
-                credentials.email,
-                credentials.password,
-                credentials.name
-            )
+            const data = (
+                await authApi.register(
+                    credentials.email,
+                    credentials.password,
+                    credentials.fullName,
+                    credentials.confirmPassword
+                )
+            ).data.data
 
-            if (response && response.data) {
-                const registerData: RegisterApiResponse = response.data
-                return { success: true, data: registerData }
-            } else {
-                throw new Error('Invalid response from server')
+            return { success: true, data }
+        } catch (error: unknown) {
+            const apiError = error as ApiResponse<null>
+            const errorMessage = apiError.message || 'Registration failed'
+
+            console.log('Registration error:', errorMessage)
+            setError('Registration failed')
+
+            return {
+                success: false,
+                statusCode: apiError.statusCode,
+                message: errorMessage
+            }
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleResendVerificationEmail = async (
+        credentials: ResendVerificationEmailCredentials
+    ): Promise<AxiosSuccessResponse<null> | AxiosErrorResponse> => {
+        try {
+            setLoading(true)
+            clearError()
+
+            if (!validateEmail(credentials.email)) {
+                throw new Error('Invalid email format')
+            }
+
+            // Call the actual API
+            await authApi.resendVerificationEmail(credentials.email)
+
+            return {
+                success: true,
+                data: null
             }
         } catch (error: unknown) {
-            let errorMessage = 'Registration failed'
+            const apiError = error as ApiResponse<null>
+            const errorMessage = apiError.message || 'Resend verification email failed'
 
-            // Handle different types of errors from API
-            const axiosError = error as AxiosErrorResponse
+            console.log('Resend verification email error:', errorMessage)
+            setError('Resend verification email failed')
 
-            if (axiosError.response?.data?.message) {
-                errorMessage = axiosError.response.data.message
-            } else if (axiosError.message) {
-                errorMessage = axiosError.message
-            } else if (error instanceof Error) {
-                errorMessage = error.message
+            return {
+                success: false,
+                statusCode: apiError.statusCode,
+                message: errorMessage
             }
-
-            setError(errorMessage)
-            return { success: false, error: errorMessage }
         } finally {
             setLoading(false)
         }
@@ -159,12 +171,13 @@ export const useAuth = () => {
     }
 
     return {
-        user,
+        account,
         isLoading,
         isAuthenticated,
         error,
         login: handleLogin,
         register: handleRegister,
+        resendVerificationEmail: handleResendVerificationEmail,
         logout: handleLogout,
         clearError
     }

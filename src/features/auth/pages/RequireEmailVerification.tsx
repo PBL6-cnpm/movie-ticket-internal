@@ -3,10 +3,15 @@
 import Button from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/shared/components/ui/card'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+// import { useState } from 'react'
+// import { useAuth } from '../hooks/auth.hook'
 
 const EmailVerificationSuccess = () => {
     const navigate = useNavigate()
     const { email } = useSearch({ from: '/email-verification' })
+
+    // const [formData, setFormData] = useState({ email: email || '' })
+    // const { resendVerificationEmail } = useAuth()
 
     const handleOpenGmail = () => {
         // Mở Gmail trong tab mới
@@ -16,6 +21,14 @@ const EmailVerificationSuccess = () => {
     const handleGoToLogin = () => {
         navigate({ to: '/login' })
     }
+
+    // const handleResendVerification = async (e: React.FormEvent) => {
+    //     e.preventDefault()
+    //     const result = await resendVerificationEmail(formData)
+    //     if (result.success) {
+    //         alert('Verification email resent! Please check your inbox.')
+    //     }
+    // }
 
     return (
         <div className="min-h-screen bg-brand flex items-center justify-center p-4">
@@ -47,7 +60,7 @@ const EmailVerificationSuccess = () => {
                         </div>
 
                         <h2 className="text-2xl font-bold text-center text-primary">
-                            Registration Successful!
+                            Check your email!
                         </h2>
                         <p className="text-center text-secondary text-sm">
                             {email ? (
@@ -65,7 +78,7 @@ const EmailVerificationSuccess = () => {
                     <CardContent className="space-y-6">
                         <div className="text-center space-y-4">
                             {/* Email Icon */}
-                            <div className="mx-auto w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center">
+                            {/* <div className="mx-auto w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center">
                                 <svg
                                     className="w-10 h-10 text-blue-400"
                                     fill="none"
@@ -97,7 +110,7 @@ const EmailVerificationSuccess = () => {
                                     . Click the button below to open Gmail and find the verification
                                     email.
                                 </p>
-                            </div>
+                            </div> */}
 
                             <div className="bg-blue-500/10 border border-blue-400/30 rounded-lg p-4">
                                 <div className="flex items-start space-x-3">
@@ -171,9 +184,9 @@ const EmailVerificationSuccess = () => {
                                 className="w-full text-center py-2 text-sm text-secondary hover:text-primary transition-colors"
                             >
                                 Didn't receive the email?
-                                <span className="text-brand-primary hover:text-brand-secondary ml-1 font-medium">
+                                <a className="text-brand-primary hover:text-brand-secondary ml-1 font-medium cursor-pointer">
                                     Resend verification
-                                </span>
+                                </a>
                             </button>
 
                             {/* Demo button - Remove in production */}

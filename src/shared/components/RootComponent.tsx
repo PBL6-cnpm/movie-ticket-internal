@@ -3,9 +3,9 @@ import { Outlet } from '@tanstack/react-router'
 import Header from '../layout/Header'
 
 export const RootComponent = () => {
-    const { user, isAuthenticated } = useAuth()
+    const { isAuthenticated } = useAuth()
 
-    const shouldShowHeader = !isAuthenticated || user
+    const shouldShowHeader = !isAuthenticated
 
     return (
         <>

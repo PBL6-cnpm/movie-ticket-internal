@@ -3,6 +3,7 @@ import Button from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Link, useLocation } from '@tanstack/react-router'
 import React from 'react'
+import { BASE_SUPER_ADMIN, SUPER_ADMIN_BRANCH, SUPER_ADMIN_ROLE } from '../routes'
 
 interface AdminNavItem {
     label: string
@@ -16,27 +17,15 @@ const AdminHeader: React.FC = () => {
     const navItems: AdminNavItem[] = [
         {
             label: 'Dashboard',
-            href: '/admin'
+            href: `/${BASE_SUPER_ADMIN}`
         },
         {
             label: 'Quản lý Role',
-            href: '/admin/roles'
-        },
-        {
-            label: 'Quản lý User',
-            href: '/admin/users'
-        },
-        {
-            label: 'Quản lý Phim',
-            href: '/admin/movies'
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_ROLE}`
         },
         {
             label: 'Quản lý chi Branch',
-            href: '/admin/branches'
-        },
-        {
-            label: 'Báo cáo',
-            href: '/admin/reports'
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_BRANCH}`
         }
     ]
 

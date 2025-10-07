@@ -2,32 +2,28 @@
 
 import { useState } from 'react'
 import { useAuth } from '../../features/auth/hooks/auth.hook'
-import { mapAccountResponseToUser } from '../../features/auth/utils/auth.utils'
 import { DesktopHeader, MobileHeader } from '../components/header'
 
 export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const { user: accountUser, isAuthenticated } = useAuth()
-
-    // Convert AccountResponse to User
-    const user = mapAccountResponseToUser(accountUser)
+    const { account, isAuthenticated } = useAuth()
 
     const handleMobileMenuToggle = () => {
         setMobileMenuOpen(!mobileMenuOpen)
     }
 
     return (
-        <header className="bg-surface shadow-lg sticky top-0 z-50 border-b border-surface">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header className="bg-surface shadow-lg sticky top-0 z-50 border-b border-surface py-3">
+            <div className="container-custom">
                 <DesktopHeader
-                    user={user}
+                    account={account}
                     isAuthenticated={isAuthenticated}
                     onMobileMenuToggle={handleMobileMenuToggle}
                     isMobileMenuOpen={mobileMenuOpen}
                 />
 
                 <MobileHeader
-                    user={user}
+                    account={account}
                     isAuthenticated={isAuthenticated}
                     isOpen={mobileMenuOpen}
                 />

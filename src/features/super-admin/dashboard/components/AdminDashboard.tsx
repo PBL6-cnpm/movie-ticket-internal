@@ -5,7 +5,7 @@ import Button from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 
 const AdminDashboard = () => {
-    const { user, logout } = useAuth()
+    const { logout } = useAuth()
 
     const handleLogout = () => {
         logout()
@@ -17,7 +17,7 @@ const AdminDashboard = () => {
             <div className="flex justify-between items-center">
                 <div className="text-center flex-1">
                     <h1 className="text-4xl font-bold text-red-600 mb-4">Hello A dmin! 👑</h1>
-                    <p className="text-xl text-gray-600">Welcome back, {user?.name}</p>
+                    <p className="text-xl text-gray-600">Welcome back</p>
                 </div>
                 <Button onClick={handleLogout} className="bg-gray-600 hover:bg-gray-700 text-white">
                     Logout

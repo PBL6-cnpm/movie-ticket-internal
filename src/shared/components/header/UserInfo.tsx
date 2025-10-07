@@ -1,14 +1,14 @@
 'use client'
 
 import { useAuth } from '@/features/auth/hooks/auth.hook'
-import type { User } from '@/features/auth/types/auth.type'
+import type { Account } from '@/features/auth/types/account.type'
 import { useEffect, useRef, useState } from 'react'
 
 interface UserInfoProps {
-    user: User
+    account: Account
 }
 
-export default function UserInfo({ user }: UserInfoProps) {
+export default function UserInfo({ account }: UserInfoProps) {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const { logout } = useAuth()
@@ -25,8 +25,8 @@ export default function UserInfo({ user }: UserInfoProps) {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
-    const handleLogout = () => {
-        logout()
+    const handleLogout = async () => {
+        await logout()
         window.location.href = '/login'
     }
 
@@ -40,7 +40,7 @@ export default function UserInfo({ user }: UserInfoProps) {
                 {/* User Avatar */}
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
-                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                        {account.fullName?.charAt(0).toUpperCase() || 'U'}
                     </span>
                 </div>
 
@@ -68,12 +68,12 @@ export default function UserInfo({ user }: UserInfoProps) {
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                                 <span className="text-white font-medium">
-                                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                                    {account.fullName?.charAt(0).toUpperCase() || 'U'}
                                 </span>
                             </div>
                             <div>
-                                <p className="font-medium text-primary">{user.name}</p>
-                                <p className="text-sm text-secondary">{user.email}</p>
+                                <p className="font-medium text-primary">{account.fullName}</p>
+                                <p className="text-sm text-secondary">{account.email}</p>
                             </div>
                         </div>
                     </div>
@@ -130,7 +130,7 @@ export default function UserInfo({ user }: UserInfoProps) {
                             <div className="flex items-center justify-between w-full">
                                 <span>My Points</span>
                                 <span className="text-xs text-primary font-medium bg-secondary px-2 py-1 rounded-full">
-                                    {user.coin} coins
+                                    {account.coin} coins
                                 </span>
                             </div>
                         </button>

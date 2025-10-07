@@ -1,20 +1,22 @@
-export interface RoleResponse {
-    id: string
-    name: string
-}
-
 export interface Role {
-    id: string
-    name: string
+    roleId: string
+    roleName: string
+    permissions?: Permission[] // Optional populated permissions
 }
 
 export interface Permission {
-    id: string
-    name: string
+    permissionId: number
+    permissionName: string
 }
 
 export interface PermissionInRole {
     id: string
     name: string
     isHas: boolean
+}
+
+// Responses
+export interface RoleResponse {
+    roleId: string
+    roleName: string
 }

@@ -2,8 +2,10 @@ import { rootRoute } from '@/shared/routes/__root'
 import { createRoute } from '@tanstack/react-router'
 import AdminDashboard from '../components/AdminDashboard'
 
-export const adminRoute = createRoute({
+export const BASE_SUPER_ADMIN = 'super-admin'
+
+export const superAdminRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: '/admin',
+    path: `/${BASE_SUPER_ADMIN}`,
     component: AdminDashboard
 })

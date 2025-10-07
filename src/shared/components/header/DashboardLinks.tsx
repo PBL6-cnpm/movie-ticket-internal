@@ -1,13 +1,14 @@
-import type { User } from '../../../features/auth/types/auth.type'
+import type { Account } from '@/features/auth/types/account.type'
+import { checkRole, Roles } from '@/features/auth/utils/role.util'
 
 interface DashboardLinksProps {
-    user: User
+    account: Account
 }
 
-export default function DashboardLinks({ user }: DashboardLinksProps) {
+export default function DashboardLinks({ account }: DashboardLinksProps) {
     return (
         <div className="hidden md:block">
-            {user.role?.roleName === 'admin' && (
+            {checkRole(account, Roles.ADMIN) && (
                 <a
                     href="/admin"
                     className="text-sm text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors"
@@ -15,12 +16,12 @@ export default function DashboardLinks({ user }: DashboardLinksProps) {
                     Admin Panel
                 </a>
             )}
-            {user.role?.roleName === 'employee' && (
+            {checkRole(account, Roles.STAFF) && (
                 <a
-                    href="/employee"
+                    href="/staff"
                     className="text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
                 >
-                    Employee Panel
+                    Staff Panel
                 </a>
             )}
         </div>

@@ -10,7 +10,7 @@ import { useAuth } from '../hooks/auth.hook'
 
 const RegisterForm = () => {
     const [formData, setFormData] = useState({
-        name: '',
+        fullName: '',
         email: '',
         password: '',
         confirmPassword: ''
@@ -29,7 +29,7 @@ const RegisterForm = () => {
         e.preventDefault()
 
         // Validate full name
-        if (!formData.name || formData.name.trim().length === 0) {
+        if (!formData.fullName || formData.fullName.trim().length === 0) {
             return
         }
 
@@ -39,7 +39,7 @@ const RegisterForm = () => {
         }
 
         const result = await register({
-            name: formData.name,
+            fullName: formData.fullName,
             email: formData.email,
             password: formData.password,
             confirmPassword: formData.confirmPassword
@@ -96,7 +96,7 @@ const RegisterForm = () => {
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
                                 <label
-                                    htmlFor="name"
+                                    htmlFor="fullName"
                                     className="block text-sm font-medium text-secondary"
                                 >
                                     Full Name
@@ -119,9 +119,9 @@ const RegisterForm = () => {
                                     </div>
                                     <Input
                                         type="text"
-                                        id="name"
-                                        name="name"
-                                        value={formData.name}
+                                        id="fullName"
+                                        name="fullName"
+                                        value={formData.fullName}
                                         onChange={handleChange}
                                         placeholder="Enter your full name"
                                         className="pl-10 input-field"
@@ -334,7 +334,7 @@ const RegisterForm = () => {
                             </div>
                             <div className="relative flex justify-center text-sm">
                                 <span className="px-2 bg-transparent text-secondary">
-                                    Or sign up with
+                                    Or Register with
                                 </span>
                             </div>
                         </div>
@@ -392,7 +392,7 @@ const RegisterForm = () => {
                                     }}
                                     className="font-medium text-brand-primary hover:text-brand-secondary transition-colors cursor-pointer"
                                 >
-                                    Sign in here
+                                    Login here
                                 </a>
                             </p>
                         </div>

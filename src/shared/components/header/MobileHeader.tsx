@@ -1,13 +1,15 @@
-import { useAuth } from '../../../features/auth/hooks/auth.hook'
-import type { User } from '../../../features/auth/types/auth.type'
+import type { Account } from '@/features/auth/types/account.type'
+import { checkRole, Roles } from '@/features/auth/utils/role.util'
+import { useAuth } from '../../../../../movie-ticket-web/src/features/auth/hooks/auth.hook'
+import SearchBar from './SearchBar'
 
 interface MobileHeaderProps {
-    user: User | null
+    account: Account | null
     isAuthenticated: boolean
     isOpen: boolean
 }
 
-export default function MobileHeader({ user, isAuthenticated, isOpen }: MobileHeaderProps) {
+export default function MobileHeader({ account, isAuthenticated, isOpen }: MobileHeaderProps) {
     const { logout } = useAuth()
 
     const handleLogout = () => {
@@ -19,6 +21,15 @@ export default function MobileHeader({ user, isAuthenticated, isOpen }: MobileHe
     return (
         <div className="md:hidden border-t border-gray-200">
             <div className="px-2 pt-2 pb-3 space-y-1">
+                {/* Mobile Search Bar */}
+                <div className="px-3 py-2">
+                    <SearchBar
+                        onSearch={(query) => console.log('Mobile search query:', query)}
+                        placeholder="Search movies, theaters..."
+                        className="w-full"
+                    />
+                </div>
+
                 <a
                     href="/"
                     className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-md transition-colors"
@@ -54,37 +65,37 @@ export default function MobileHeader({ user, isAuthenticated, isOpen }: MobileHe
                         </a>
 
                         {/* Mobile User Info */}
-                        {user && (
+                        {account && (
                             <div className="px-3 py-2 border-t border-gray-200 mt-2">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium text-gray-900">
-                                        {user.name}
+                                        {account.fullName}
                                     </span>
                                     <span
                                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${
-                                            user.role?.roleName === 'admin'
+                                            checkRole(account, Roles.ADMIN)
                                                 ? 'bg-red-500'
-                                                : user.role?.roleName === 'employee'
+                                                : checkRole(account, Roles.STAFF)
                                                   ? 'bg-blue-500'
                                                   : 'bg-green-500'
                                         }`}
                                     >
-                                        {user.role?.roleName === 'admin'
+                                        {checkRole(account, Roles.ADMIN)
                                             ? 'Admin'
-                                            : user.role?.roleName === 'employee'
-                                              ? 'Employee'
+                                            : checkRole(account, Roles.STAFF)
+                                              ? 'Staff'
                                               : 'Customer'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-xs text-gray-500">Balance:</span>
                                     <span className="text-xs font-medium text-yellow-600">
-                                        {user.coin} coins
+                                        {account.coin} coins
                                     </span>
                                 </div>
 
                                 {/* Mobile Dashboard Link */}
-                                {user.role?.roleName === 'admin' && (
+                                {checkRole(account, Roles.ADMIN) && (
                                     <a
                                         href="/admin"
                                         className="block w-full text-center text-sm text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium mb-2 transition-colors"
@@ -92,12 +103,12 @@ export default function MobileHeader({ user, isAuthenticated, isOpen }: MobileHe
                                         Admin Panel
                                     </a>
                                 )}
-                                {user.role?.roleName === 'employee' && (
+                                {checkRole(account, Roles.STAFF) && (
                                     <a
-                                        href="/employee"
+                                        href="/staff"
                                         className="block w-full text-center text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium mb-2 transition-colors"
                                     >
-                                        Employee Panel
+                                        Staff Panel
                                     </a>
                                 )}
 
@@ -123,7 +134,7 @@ export default function MobileHeader({ user, isAuthenticated, isOpen }: MobileHe
                             href="/register"
                             className="flex w-full justify-center text-sm text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
                         >
-                            Sign Up
+                            Register
                         </a>
                     </div>
                 )}

@@ -1,40 +1,18 @@
-export interface User {
-    account_id: string
-    branch_id?: string
-    email: string
-    password?: string // Optional vì không nên return password
-    coin: number
-    status: boolean
-    role_id: number
+import type { Account } from './account.type'
 
-    role?: Role // Optional populated role
-    name?: string // Additional field for display
-    avatar?: string // Additional field for UI
-    createdAt?: string // Additional field
-    updatedAt?: string // Additional field
+export interface AuthState {
+    user: Account | null
+    isLoading: boolean
+    isAuthenticated: boolean
+    error: string | null
 }
 
-export interface Role {
-    role_id: number
-    roleName: string
-    permissions?: Permission[] // Optional populated permissions
-}
-
-export interface Permission {
-    permission_id: number
-    permissionName: string
-}
-
-export interface RolePermission {
-    role_id: number
-    permission_id: number
-}
-
-export interface Branch {
-    branch_id: string
-    branchName?: string
-    // Add other branch fields as needed
-}
+export type AuthAction =
+    | { type: 'AUTH_START' }
+    | { type: 'AUTH_SUCCESS'; payload: { user: Account } }
+    | { type: 'AUTH_ERROR'; payload: string }
+    | { type: 'LOGOUT' }
+    | { type: 'CLEAR_ERROR' }
 
 export interface LoginCredentials {
     email: string
@@ -45,79 +23,23 @@ export interface RegisterCredentials {
     email: string
     password: string
     confirmPassword: string
+    fullName: string
     branch_id?: string
-    name: string // Required full name
 }
 
-export interface AuthState {
-    user: User | null
-    isLoading: boolean
-    isAuthenticated: boolean
-    error: string | null
+export interface ResendVerificationEmailCredentials {
+    email: string
 }
 
-export interface AuthResponse {
-    user: User
-    accessToken: string
-    refreshToken: string
-}
-
-export interface UserWithDetails extends User {
-    role: Role
-    branch?: Branch
-    permissions: Permission[]
-}
-
-export type AuthAction =
-    | { type: 'AUTH_START' }
-    | { type: 'AUTH_SUCCESS'; payload: { user: User } }
-    | { type: 'AUTH_ERROR'; payload: string }
-    | { type: 'LOGOUT' }
-    | { type: 'CLEAR_ERROR' }
-
-// API Response interfaces
-export interface ApiError {
-    message: string
-    statusCode?: number
-    code?: string
-}
-
-export interface ApiResponse<T> {
-    data: T
-    success?: boolean
-    message?: string
-}
-
+// Responses
 export interface LoginApiResponse {
-    accessToken?: string
-    refreshToken?: string
-}
-
-export interface AccountResponse {
-    id?: string
-    branchId?: string
-    email?: string
-    coin?: number
-    status?: string
-    roleNames?: string[]
-    name?: string
-    avatar?: string
-    createdAt?: string
-    updatedAt?: string
-}
-
-export interface RegisterApiResponse {
-    message?: string
-    user?: Partial<User> & { fullName: string }
-    success?: boolean
-    fullName?: string
-}
-
-export interface AxiosErrorResponse {
-    response?: {
-        data?: ApiError
-        status?: number
-        statusText?: string
+    success: boolean
+    statusCode: number
+    message: string
+    code: string
+    data: {
+        account: Account
+        accessToken: string
+        message: string
     }
-    message?: string
 }

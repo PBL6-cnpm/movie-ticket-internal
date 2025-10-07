@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite'
+import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { defineConfig } from 'vite'
 import envCompatible from 'vite-plugin-env-compatible'
 import viteTsconfigPaths from 'vite-tsconfig-paths'
-import tailwindcss from '@tailwindcss/vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -25,8 +25,8 @@ export default defineConfig({
     plugins: [react(), tailwindcss(), envCompatible(), viteTsconfigPaths()],
     resolve: {
         alias: {
-            find: '@root',
-            replacement: resolve(__dirname, '.')
+            '@': resolve(__dirname, './src'),
+            '@root': resolve(__dirname, '.')
         }
     }
 })

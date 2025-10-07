@@ -1,4 +1,4 @@
-import type { PermissionInRole, Role, RoleResponse } from '@/features/auth/types/role.type'
+import type { PermissionInRole, Role } from '@/features/auth/types/role.type'
 import { getPermissionByRoleId, savePermissionByRoleId } from '@/shared/api/permission-api'
 import { createNewRole, deleteRole, getAllRole } from '@/shared/api/role-api'
 import Button from '@/shared/components/ui/button'
@@ -62,16 +62,16 @@ const RoleManageForm: React.FC = () => {
 
                 if (!data || !data.data) return
 
-                const apiRoles: Role[] = data.data.map((role: RoleResponse) => ({
-                    id: role.id.toString(),
-                    name: role.name
+                const apiRoles: Role[] = data.data.map((role: { id: string; name: string }) => ({
+                    roleId: role.id,
+                    roleName: role.name
                 }))
 
                 setRoles(apiRoles)
 
                 if (apiRoles.length > 0) {
-                    setSelectedRoleId(apiRoles[0].id)
-                    setSelectedRoleName(apiRoles[0].name) // Add this line to set role name
+                    setSelectedRoleId(apiRoles[0].roleId)
+                    setSelectedRoleName(apiRoles[0].roleName) // Add this line to set role name
                 }
                 console.log('Loaded roles:', apiRoles)
             } catch (error) {
@@ -127,9 +127,9 @@ const RoleManageForm: React.FC = () => {
         setSelectedRoleId(roleId)
 
         // Find and store the role name
-        const selectedRoleObj = roles.find((role) => role.id === roleId)
+        const selectedRoleObj = roles.find((role) => role.roleId === roleId)
         if (selectedRoleObj) {
-            setSelectedRoleName(selectedRoleObj.name)
+            setSelectedRoleName(selectedRoleObj.roleName)
         }
     }
 
@@ -182,18 +182,18 @@ const RoleManageForm: React.FC = () => {
             const roleResponse = response.data.data
 
             const newRole: Role = {
-                id: roleResponse.id,
-                name: roleResponse.name
+                roleId: roleResponse.id,
+                roleName: roleResponse.name
             }
 
             setRoles((prevRoles) => [...prevRoles, newRole])
             setNewRoleName('')
 
-            alert(`Role "${newRole.name}" đã được tạo thành công!`)
+            alert(`Role "${newRole.roleName}" đã được tạo thành công!`)
 
             // Auto-select the new role
-            setSelectedRoleId(newRole.id)
-            setSelectedRoleName(newRole.name)
+            setSelectedRoleId(newRole.roleId)
+            setSelectedRoleName(newRole.roleName)
         } catch (error) {
             console.error('Error creating role:', error)
             alert('Có lỗi xảy ra khi tạo role')
@@ -227,13 +227,13 @@ const RoleManageForm: React.FC = () => {
             console.log(response)
 
             // Remove role from local state
-            const updatedRoles = roles.filter((role) => role.id !== selectedRoleId)
+            const updatedRoles = roles.filter((role) => role.roleId !== selectedRoleId)
             setRoles(updatedRoles)
 
             // Select first role if available, otherwise clear
             if (updatedRoles.length > 0) {
-                setSelectedRoleId(updatedRoles[0].id)
-                setSelectedRoleName(updatedRoles[0].name)
+                setSelectedRoleId(updatedRoles[0].roleId)
+                setSelectedRoleName(updatedRoles[0].roleName)
             } else {
                 setSelectedRoleId('')
                 setSelectedRoleName('')
@@ -326,7 +326,9 @@ const RoleManageForm: React.FC = () => {
         return rolePermissions.includes(permissionId)
     }
 
-    const selectedRole = selectedRoleId ? roles.find((role) => role.id === selectedRoleId) : null
+    const selectedRole = selectedRoleId
+        ? roles.find((role) => role.roleId === selectedRoleId)
+        : null
 
     return (
         <div className="min-h-screen bg-brand p-6">
@@ -364,22 +366,19 @@ const RoleManageForm: React.FC = () => {
                                             />
                                         </SelectTrigger>
                                         <SelectContent className="bg-surface border-surface">
-                                            {
-                                                // Combine API roles with mock roles for demo
-                                                [...roles].map((role) => (
-                                                    <SelectItem
-                                                        key={role.id}
-                                                        value={role.id}
-                                                        className="hover:bg-brand focus:bg-brand"
-                                                    >
-                                                        <div>
-                                                            <div className="font-medium text-primary">
-                                                                {role.name}
-                                                            </div>
+                                            {roles.map((role) => (
+                                                <SelectItem
+                                                    key={role.roleId}
+                                                    value={role.roleId}
+                                                    className="hover:bg-brand focus:bg-brand"
+                                                >
+                                                    <div>
+                                                        <div className="font-medium text-primary">
+                                                            {role.roleName}
                                                         </div>
-                                                    </SelectItem>
-                                                ))
-                                            }
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -413,7 +412,7 @@ const RoleManageForm: React.FC = () => {
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
                                                 <h4 className="font-medium text-brand-primary">
-                                                    {selectedRole.name}
+                                                    {selectedRole.roleName}
                                                 </h4>
                                                 <p className="text-xs text-brand-secondary mt-2">
                                                     Hiện tại có{' '}
@@ -445,7 +444,7 @@ const RoleManageForm: React.FC = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <CardTitle className="text-primary">
-                                            Danh sách Quyền - {selectedRole.name}
+                                            Danh sách Quyền - {selectedRole.roleName}
                                         </CardTitle>
                                         <CardDescription className="text-secondary">
                                             Tick/untick để cấp hoặc thu hồi quyền
@@ -496,7 +495,7 @@ const RoleManageForm: React.FC = () => {
 
                                                             return (
                                                                 <div
-                                                                    key={permissionId}
+                                                                    key={`${module}-${permissionId}`}
                                                                     className="flex items-start space-x-3 p-3 rounded-lg bg-surface hover:bg-brand hover:shadow-lg transition-all duration-200 border border-surface"
                                                                 >
                                                                     <Checkbox

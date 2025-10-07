@@ -6,6 +6,8 @@ import { Input } from '@/shared/components/ui/input'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useAuth } from '../hooks/auth.hook'
+import type { Account } from '../types/account.type'
+import { getRedirectPathByRole } from '../utils/role.util'
 
 const LoginForm = () => {
     const [email, setEmail] = useState('')
@@ -16,11 +18,22 @@ const LoginForm = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         const result = await login({ email, password })
-        if (result?.success) {
+        if (result.success) {
             console.log('Login successful!')
 
-            // const redirectPath = getRedirectPathByRole(result.user.role_id)
-            navigate({ to: '/admin/roles' })
+            if (typeof result.message === 'string') {
+                console.log('Result data:', result.data)
+                // Redirect đến trang verification email với email
+                navigate({
+                    to: '/email-verification',
+                    search: { email }
+                })
+                return
+            } else {
+                // If result.data is Account, redirect based on role
+                const href = getRedirectPathByRole(result.data as Account)
+                navigate({ to: href })
+            }
         }
     }
 
@@ -36,7 +49,7 @@ const LoginForm = () => {
                     }}
                 >
                     <CardHeader className="space-y-1 pb-6">
-                        <h2 className="text-2xl font-bold text-center text-primary">Sign In</h2>
+                        <h2 className="text-2xl font-bold text-center text-primary">Login</h2>
                         <p className="text-center text-secondary text-sm">
                             Enter your credentials to access your account
                         </p>
@@ -204,10 +217,10 @@ const LoginForm = () => {
                                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                             ></path>
                                         </svg>
-                                        Signing in...
+                                        Logging in...
                                     </div>
                                 ) : (
-                                    'Sign In'
+                                    'Login'
                                 )}
                             </Button>
                         </form>

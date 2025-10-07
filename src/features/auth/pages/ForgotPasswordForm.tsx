@@ -82,7 +82,7 @@ const ForgotPasswordForm = () => {
                                         onClick={() => navigate({ to: '/login' })}
                                         className="w-full btn-primary font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-xl"
                                     >
-                                        Back to Sign In
+                                        Back to Login
                                     </Button>
                                 </div>
 
@@ -298,7 +298,7 @@ const ForgotPasswordForm = () => {
                                         backgroundColor: 'rgba(36, 43, 61, 0.3)'
                                     }}
                                 >
-                                    Back to Sign In
+                                    Back to Login
                                 </button>
 
                                 <button
