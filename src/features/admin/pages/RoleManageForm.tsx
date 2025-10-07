@@ -376,10 +376,6 @@ const RoleManageForm: React.FC = () => {
                                                             <div className="font-medium text-primary">
                                                                 {role.name}
                                                             </div>
-                                                            {/* <div className="text-sm text-secondary">
-                                                                {(role as any).description ||
-                                                                    'Không có mô tả'}
-                                                            </div> */}
                                                         </div>
                                                     </SelectItem>
                                                 ))
@@ -419,9 +415,6 @@ const RoleManageForm: React.FC = () => {
                                                 <h4 className="font-medium text-brand-primary">
                                                     {selectedRole.name}
                                                 </h4>
-                                                <p className="text-sm text-primary">
-                                                    {'Không có mô tả'}
-                                                </p>
                                                 <p className="text-xs text-brand-secondary mt-2">
                                                     Hiện tại có{' '}
                                                     {apiPermissions.filter((p) => p.isHas).length ||
@@ -500,8 +493,6 @@ const RoleManageForm: React.FC = () => {
                                                                 permission.id?.toString() ||
                                                                 permission.id
                                                             const permissionName = permission.name
-                                                            const permissionDescription =
-                                                                'Không có mô tả'
 
                                                             return (
                                                                 <div
@@ -530,9 +521,6 @@ const RoleManageForm: React.FC = () => {
                                                                         >
                                                                             {permissionName}
                                                                         </label>
-                                                                        <p className="text-xs text-secondary mt-1">
-                                                                            {permissionDescription}
-                                                                        </p>
                                                                     </div>
                                                                 </div>
                                                             )
