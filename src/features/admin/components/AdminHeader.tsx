@@ -31,8 +31,8 @@ const AdminHeader: React.FC = () => {
             href: '/admin/movies'
         },
         {
-            label: 'Quản lý Rạp',
-            href: '/admin/theaters'
+            label: 'Quản lý chi Branch',
+            href: '/admin/branches'
         },
         {
             label: 'Báo cáo',
