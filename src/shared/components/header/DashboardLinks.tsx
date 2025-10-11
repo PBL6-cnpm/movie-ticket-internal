@@ -7,13 +7,21 @@ interface DashboardLinksProps {
 
 export default function DashboardLinks({ account }: DashboardLinksProps) {
     return (
-        <div className="hidden md:block">
+        <div className="hidden md:flex space-x-2">
+            {checkRole(account, Roles.SUPER_ADMIN) && (
+                <a
+                    href="/super-admin"
+                    className="text-sm text-white bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                >
+                    Super Admin
+                </a>
+            )}
             {checkRole(account, Roles.ADMIN) && (
                 <a
-                    href="/admin"
+                    href="/admin/dashboard"
                     className="text-sm text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-medium transition-colors"
                 >
-                    Admin Panel
+                    Admin Dashboard
                 </a>
             )}
             {checkRole(account, Roles.STAFF) && (
