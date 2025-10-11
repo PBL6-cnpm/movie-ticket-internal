@@ -3,7 +3,12 @@ import Button from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Link, useLocation } from '@tanstack/react-router'
 import React from 'react'
-import { BASE_SUPER_ADMIN, SUPER_ADMIN_BRANCH, SUPER_ADMIN_ROLE } from '../routes'
+import {
+    BASE_SUPER_ADMIN,
+    SUPER_ADMIN_ADMIN_ACCOUNTS,
+    SUPER_ADMIN_BRANCH,
+    SUPER_ADMIN_ROLE
+} from '../routes'
 
 interface AdminNavItem {
     label: string
@@ -26,6 +31,10 @@ const AdminHeader: React.FC = () => {
         {
             label: 'Quản lý chi Branch',
             href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_BRANCH}`
+        },
+        {
+            label: 'Quản lý Admin',
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_ADMIN_ACCOUNTS}`
         }
     ]
 
