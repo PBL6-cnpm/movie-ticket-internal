@@ -1,10 +1,3 @@
-import type {
-    AdminAccount,
-    CreateAdminAccountRequest,
-    SearchAdminAccountParams,
-    UpdateAdminAccountRequest
-} from '@/features/auth/types/admin-account.type'
-import { AccountStatus } from '@/features/auth/types/admin-account.type'
 import type { Role } from '@/features/auth/types/role.type'
 import {
     createAdminAccount,
@@ -32,6 +25,13 @@ import {
     SelectValue
 } from '@/shared/components/ui/select'
 import React, { useEffect, useState } from 'react'
+import {
+    AccountStatus,
+    type AdminAccount,
+    type CreateAdminAccountRequest,
+    type SearchAdminAccountParams,
+    type UpdateAdminAccountRequest
+} from '../types/account-admin.types'
 
 const AdminAccountManageForm: React.FC = () => {
     const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>([])
@@ -51,7 +51,7 @@ const AdminAccountManageForm: React.FC = () => {
         email: '',
         password: '',
         fullName: '',
-        phone: '',
+        phoneNumber: '',
         branchId: ''
     })
 
@@ -105,15 +105,9 @@ const AdminAccountManageForm: React.FC = () => {
                     getAllRole()
                 ])
 
-                if (adminAccountsResponse.data && adminAccountsResponse.data.data) {
-                    setAdminAccounts(
-                        adminAccountsResponse.data.data.items || adminAccountsResponse.data.data
-                    )
-                    setTotalItems(
-                        adminAccountsResponse.data.data?.meta?.total ||
-                            adminAccountsResponse.data.total ||
-                            0
-                    )
+                if (adminAccountsResponse.success && adminAccountsResponse.data) {
+                    setAdminAccounts(adminAccountsResponse.data.items)
+                    setTotalItems(adminAccountsResponse.data.meta.total)
                 }
 
                 if (branchesResponse.data) {
@@ -164,10 +158,10 @@ const AdminAccountManageForm: React.FC = () => {
             errors.fullName = 'Họ tên là bắt buộc'
         }
 
-        if (!formData.phone.trim()) {
-            errors.phone = 'Số điện thoại là bắt buộc'
-        } else if (!/^[0-9]{10,11}$/.test(formData.phone)) {
-            errors.phone = 'Số điện thoại không hợp lệ'
+        if (!formData.phoneNumber.trim()) {
+            errors.phoneNumber = 'Số điện thoại là bắt buộc'
+        } else if (!/^[0-9]{10,11}$/.test(formData.phoneNumber)) {
+            errors.phoneNumber = 'Số điện thoại không hợp lệ'
         }
 
         if (!formData.branchId) {
@@ -206,8 +200,8 @@ const AdminAccountManageForm: React.FC = () => {
 
             const response = await createAdminAccount(formData)
 
-            if (response.data && response.data.success) {
-                const newAdminAccount: AdminAccount = response.data.data
+            if (response.success && response.data) {
+                const newAdminAccount: AdminAccount = response.data
 
                 // Add branch name to the account for display
                 const branch = branches.find((b) => b.id === newAdminAccount.branchId)
@@ -222,14 +216,14 @@ const AdminAccountManageForm: React.FC = () => {
                     email: '',
                     password: '',
                     fullName: '',
-                    phone: '',
+                    phoneNumber: '',
                     branchId: ''
                 })
                 setShowCreateForm(false)
 
                 alert(`Tài khoản admin "${newAdminAccount.fullName}" đã được tạo thành công!`)
             } else {
-                alert('Có lỗi xảy ra khi tạo tài khoản admin')
+                alert(response.message || 'Có lỗi xảy ra khi tạo tài khoản admin')
             }
         } catch (error: unknown) {
             console.error('Error creating admin account:', error)
@@ -248,7 +242,7 @@ const AdminAccountManageForm: React.FC = () => {
             email: '',
             password: '',
             fullName: '',
-            phone: '',
+            phoneNumber: '',
             branchId: ''
         })
         setFormErrors({})
@@ -276,9 +270,14 @@ const AdminAccountManageForm: React.FC = () => {
                 }
                 console.log('Search params with pagination:', searchParamsWithPagination)
                 const response = await searchAccounts(searchParamsWithPagination)
-                console.log('Search response:', response?.data)
-                setSearchResults(response?.data?.data?.items || response?.data?.data || [])
-                setSearchTotalItems(response?.data?.data?.meta?.total || response?.data?.total || 0)
+                console.log('Search response:', response)
+                if (response.success && response.data) {
+                    setSearchResults(response.data.items)
+                    setSearchTotalItems(response.data.meta.total)
+                } else {
+                    setSearchResults([])
+                    setSearchTotalItems(0)
+                }
                 setActiveTab('search') // Switch to search tab after successful search
                 return true
             } else {
@@ -437,16 +436,16 @@ const AdminAccountManageForm: React.FC = () => {
         field: keyof UpdateAdminAccountRequest,
         value: string | string[]
     ) => {
-        setEditFormData((prev) => ({
+        setEditFormData((prev: UpdateAdminAccountRequest) => ({
             ...prev,
             [field]: value
         }))
 
         // Clear error for this field when user starts typing
-        if (editFormErrors[field]) {
+        if (editFormErrors[field as string]) {
             setEditFormErrors((prev) => ({
                 ...prev,
-                [field]: ''
+                [field as string]: ''
             }))
         }
     }
@@ -495,8 +494,8 @@ const AdminAccountManageForm: React.FC = () => {
 
             const response = await updateAccount(editingAccount.id, editFormData)
 
-            if (response.data && response.data.success) {
-                const updatedAccount: AdminAccount = response.data.data
+            if (response.success && response.data) {
+                const updatedAccount: AdminAccount = response.data
 
                 // Update the account in the list
                 setAdminAccounts((prev) =>
@@ -510,7 +509,7 @@ const AdminAccountManageForm: React.FC = () => {
 
                 alert(`Tài khoản admin "${updatedAccount.fullName}" đã được cập nhật thành công!`)
             } else {
-                alert('Có lỗi xảy ra khi cập nhật tài khoản admin')
+                alert(response.message || 'Có lỗi xảy ra khi cập nhật tài khoản admin')
             }
         } catch (error: unknown) {
             console.error('Error updating admin account:', error)
@@ -740,17 +739,17 @@ const AdminAccountManageForm: React.FC = () => {
                                             <Input
                                                 type="tel"
                                                 placeholder="0123456789"
-                                                value={formData.phone}
+                                                value={formData.phoneNumber}
                                                 onChange={(e) =>
-                                                    handleInputChange('phone', e.target.value)
+                                                    handleInputChange('phoneNumber', e.target.value)
                                                 }
                                                 className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    formErrors.phone ? 'border-red-500' : ''
+                                                    formErrors.phoneNumber ? 'border-red-500' : ''
                                                 }`}
                                             />
-                                            {formErrors.phone && (
+                                            {formErrors.phoneNumber && (
                                                 <p className="text-red-500 text-sm mt-1">
-                                                    {formErrors.phone}
+                                                    {formErrors.phoneNumber}
                                                 </p>
                                             )}
                                         </div>
@@ -1057,7 +1056,7 @@ const AdminAccountManageForm: React.FC = () => {
                                                                               role.roleId
                                                                           ]
                                                                         : editFormData.roleIds.filter(
-                                                                              (id) =>
+                                                                              (id: string) =>
                                                                                   id !== role.roleId
                                                                           )
                                                                     handleEditInputChange(

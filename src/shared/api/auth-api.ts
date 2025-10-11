@@ -15,35 +15,19 @@ export const register = async (
         confirmPassword
     }
 
-    return apiClient.post(`${BASE_URL}/register`, payload, {
-        headers: { 'Content-Type': 'application/json' }
-    })
+    return apiClient.post(`${BASE_URL}/register`, payload)
 }
 
 export const login = async (email: string, password: string) => {
-    return apiClient.post(
-        `${BASE_URL}/login`,
-        { email, password },
-        {
-            headers: { 'Content-Type': 'application/json' }
-        }
-    )
+    return apiClient.post(`${BASE_URL}/login`, { email, password })
 }
 
 export const socialLogin = async (token: string) => {
-    return apiClient.post(
-        `${BASE_URL}/google/login`,
-        { token },
-        {
-            headers: { 'Content-Type': 'application/json' }
-        }
-    )
+    return apiClient.post(`${BASE_URL}/google/login`, { token })
 }
 
 export const logout = async () => {
-    return apiClient.post(`${BASE_URL}/logout`, {
-        headers: { 'Content-Type': 'application/json' }
-    })
+    return apiClient.post(`${BASE_URL}/logout`)
 }
 
 export const resendVerificationEmail = async (email: string) => {
@@ -51,7 +35,5 @@ export const resendVerificationEmail = async (email: string) => {
 
     const payload = { email }
 
-    return apiClient.post(`${BASE_URL}/email-verifications`, payload, {
-        headers: { 'Content-Type': 'application/json' }
-    })
+    return apiClient.post(`${BASE_URL}/email-verifications`, payload)
 }

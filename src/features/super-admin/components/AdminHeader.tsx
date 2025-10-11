@@ -7,7 +7,8 @@ import {
     BASE_SUPER_ADMIN,
     SUPER_ADMIN_ADMIN_ACCOUNTS,
     SUPER_ADMIN_BRANCH,
-    SUPER_ADMIN_ROLE
+    SUPER_ADMIN_ROLE,
+    SUPER_ADMIN_TYPE_SEATS
 } from '../routes'
 
 interface AdminNavItem {
@@ -35,6 +36,10 @@ const AdminHeader: React.FC = () => {
         {
             label: 'Quản lý Admin',
             href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_ADMIN_ACCOUNTS}`
+        },
+        {
+            label: 'Quản lý Loại Ghế',
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_TYPE_SEATS}`
         }
     ]
 

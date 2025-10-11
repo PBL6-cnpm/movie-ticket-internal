@@ -7,7 +7,8 @@ import {
     adminAccountManageRoute,
     branchManageRoute,
     roleManageRoute,
-    superAdminRoute
+    superAdminRoute,
+    typeSeatManageRoute
 } from './features/super-admin/routes'
 import { rootRoute } from './shared/routes/__root'
 
@@ -22,5 +23,6 @@ export const routeTree = rootRoute.addChildren([
     superAdminRoute,
     roleManageRoute,
     branchManageRoute,
-    adminAccountManageRoute
+    adminAccountManageRoute,
+    typeSeatManageRoute
 ])
