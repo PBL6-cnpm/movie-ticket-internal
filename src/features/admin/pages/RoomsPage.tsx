@@ -8,10 +8,12 @@ import {
     CardTitle
 } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
+import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import type { CreateRoomRequest, Room, UpdateRoomRequest } from '../types/room.type'
 
 const RoomsPage = () => {
+    const navigate = useNavigate()
     const [rooms, setRooms] = useState<Room[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const [isCreating, setIsCreating] = useState<boolean>(false)
@@ -389,12 +391,25 @@ const RoomsPage = () => {
                                                     </h4>
                                                 </div>
 
-                                                <div className="flex gap-2 pt-2">
+                                                <div className="space-y-2 pt-2">
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            navigate({
+                                                                to: '/admin/rooms/$roomId/seats',
+                                                                params: { roomId: room.id }
+                                                            })
+                                                        }
+                                                        className="w-full btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
+                                                        disabled={showCreateForm || showEditForm}
+                                                    >
+                                                        Xem ghế
+                                                    </Button>
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleEditRoom(room)}
-                                                        className="flex-1 border-surface text-secondary hover:bg-brand hover:text-primary"
+                                                        className="w-full border-surface text-secondary hover:bg-brand hover:text-primary"
                                                         disabled={showCreateForm || showEditForm}
                                                     >
                                                         Sửa
@@ -403,7 +418,7 @@ const RoomsPage = () => {
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleDeleteRoom(room)}
-                                                        className="flex-1 border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                        className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
                                                         disabled={showCreateForm || showEditForm}
                                                     >
                                                         Xóa
