@@ -1,4 +1,9 @@
-import { adminDashboardRoute, adminRoomsRoute, adminRoute } from './features/admin/routes'
+import {
+    adminDashboardRoute,
+    adminRoomsRoute,
+    adminRoute,
+    adminSeatsRoute
+} from './features/admin/routes'
 import { forgotPasswordRoute } from './features/auth/routes/ForgotPassword'
 import { homeRoute, loginRoute } from './features/auth/routes/Login'
 import { registerRoute } from './features/auth/routes/Register'
@@ -28,5 +33,6 @@ export const routeTree = rootRoute.addChildren([
     typeSeatManageRoute,
     adminRoute,
     adminDashboardRoute,
-    adminRoomsRoute
+    adminRoomsRoute,
+    adminSeatsRoute
 ])
