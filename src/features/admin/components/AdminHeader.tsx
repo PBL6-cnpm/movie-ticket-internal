@@ -3,7 +3,7 @@ import Button from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Link, useLocation } from '@tanstack/react-router'
 import React from 'react'
-import { ADMIN_DASHBOARD, ADMIN_ROOMS, BASE_ADMIN } from '../routes'
+import { ADMIN_DASHBOARD, ADMIN_ROOMS, ADMIN_SHOW_TIMES, BASE_ADMIN } from '../routes'
 
 interface AdminNavItem {
     label: string
@@ -22,6 +22,10 @@ const AdminHeader: React.FC = () => {
         {
             label: 'Quản lý Phòng',
             href: `/${BASE_ADMIN}/${ADMIN_ROOMS}`
+        },
+        {
+            label: 'Quản lý Lịch chiếu',
+            href: `/${BASE_ADMIN}/${ADMIN_SHOW_TIMES}`
         }
     ]
 
