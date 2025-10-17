@@ -18,38 +18,28 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/shared/components/ui/select'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from '@/shared/components/ui/table'
 import type {
     CreateShowTimeRequest,
     Room,
     ShowTime,
     UpdateShowTimeRequest
 } from '@/shared/types/showtime.types'
-import { useEffect, useState } from 'react'
-
-// Add keyframe animation for smooth card movement
-const styleSheet = document.createElement('style')
-styleSheet.textContent = `
-    @keyframes slideToTop {
-        0% {
-            transform: translateY(20px);
-            opacity: 0.8;
-        }
-        100% {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    }
-`
-if (!document.head.querySelector('#showtime-animations')) {
-    styleSheet.id = 'showtime-animations'
-    document.head.appendChild(styleSheet)
-}
+import { showToast } from '@/shared/utils/toast'
+import { useEffect, useRef, useState } from 'react'
 
 // Paginated Movie Select Component
 const PaginatedMovieSelect = ({
     value,
     onValueChange,
-    placeholder = 'Chọn phim từ danh sách',
+    placeholder = 'Select a movie from the list',
     disabled = false
 }: {
     value: string
@@ -63,6 +53,7 @@ const PaginatedMovieSelect = ({
     const [total, setTotal] = useState<number>(0)
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [isOpen, setIsOpen] = useState<boolean>(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
     const pageSize = 8
 
     const fetchMovies = async (pageNum: number, search: string = '') => {
@@ -113,6 +104,23 @@ const PaginatedMovieSelect = ({
         }
     }, [page, searchQuery, isOpen])
 
+    // Handle click outside to close dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false)
+            }
+        }
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [isOpen])
+
     const handleSearch = () => {
         setPage(1)
         fetchMovies(1, searchQuery)
@@ -122,7 +130,7 @@ const PaginatedMovieSelect = ({
     const selectedMovie = movies?.find((m) => m.id === value)
 
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             <Button
                 type="button"
                 variant="outline"
@@ -137,148 +145,108 @@ const PaginatedMovieSelect = ({
             </Button>
 
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-popover/95 backdrop-blur-sm border border-border rounded-md shadow-lg max-h-96 overflow-hidden flex flex-col">
-                    {/* Search Header */}
-                    <div className="p-3 border-b bg-muted/60 shrink-0">
-                        <div className="flex gap-2">
-                            <Input
-                                type="text"
-                                placeholder="Tìm phim..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleSearch()
-                                    }
-                                }}
-                                className="flex-1 h-8"
-                            />
-                            <Button
-                                size="sm"
-                                onClick={handleSearch}
-                                disabled={isLoading}
-                                className="btn-primary h-8 px-3"
-                            >
-                                {isLoading ? 'Tìm...' : 'Tìm'}
-                            </Button>
-                        </div>
+                <>
+                    {/* Backdrop overlay */}
+                    <div className="fixed inset-0 z-[90]" onClick={() => setIsOpen(false)} />
 
-                        {/* Pagination Info */}
-                        <div className="mt-2 text-xs text-muted-foreground">
-                            {total > 0 ? (
-                                <>
-                                    Trang {page}/{totalPages} ({total} phim)
-                                </>
-                            ) : (
-                                <>Không tìm thấy phim nào</>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Movie List */}
-                    <div className="max-h-48 overflow-y-auto flex-1">
-                        {isLoading ? (
-                            <div className="p-3 text-center text-muted-foreground">Đang tải...</div>
-                        ) : movies && movies.length > 0 ? (
-                            movies.map((movie) => (
-                                <button
-                                    key={movie.id}
-                                    type="button"
-                                    className={`w-full px-3 py-2 text-left hover:bg-accent/50 focus:bg-accent/50 border-0 transition-colors ${
-                                        movie.id === value ? 'bg-accent/50' : 'bg-transparent'
-                                    }`}
-                                    onClick={() => {
-                                        onValueChange(movie.id)
-                                        setIsOpen(false)
+                    {/* Dropdown content */}
+                    <div className="absolute z-[100] w-full mt-1 bg-background/95 backdrop-blur-sm border border-border rounded-md shadow-xl max-h-96 overflow-hidden flex flex-col">
+                        {/* Search Header */}
+                        <div className="p-3 border-b bg-muted/80 shrink-0">
+                            <div className="flex gap-2">
+                                <Input
+                                    type="text"
+                                    placeholder="Search movie..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleSearch()
+                                        }
                                     }}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <img
-                                            src={movie.poster}
-                                            alt={movie.name}
-                                            className="w-8 h-12 object-cover rounded"
-                                        />
-                                        <span className="flex-1 truncate">{movie.name}</span>
-                                        {movie.id === value && (
-                                            <span className="text-primary">✓</span>
-                                        )}
-                                    </div>
-                                </button>
-                            ))
-                        ) : (
-                            <div className="p-3 text-center text-muted-foreground">
-                                Không có phim nào
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Pagination Footer - Always show when movies are loaded */}
-                    {!isLoading && movies && movies.length > 0 && (
-                        <div className="p-2 border-t bg-muted/50 shrink-0">
-                            <div className="flex items-center justify-between gap-2">
+                                    className="flex-1 h-8"
+                                />
                                 <Button
                                     size="sm"
-                                    variant="outline"
-                                    disabled={page <= 1 || isLoading}
-                                    onClick={() => setPage((prev) => prev - 1)}
-                                    className="h-7 px-2 text-xs shrink-0"
-                                    title="Trang trước"
+                                    onClick={handleSearch}
+                                    disabled={isLoading}
+                                    className="btn-primary h-8 px-3"
                                 >
-                                    ◀
+                                    {isLoading ? 'Searching...' : 'Search'}
                                 </Button>
+                            </div>
 
-                                <div className="flex gap-1 items-center flex-wrap justify-center">
-                                    {totalPages <= 5 ? (
-                                        // Show all pages if 5 or less
-                                        Array.from({ length: totalPages }, (_, i) => {
-                                            const pageNum = i + 1
-                                            return (
-                                                <Button
-                                                    key={pageNum}
-                                                    size="sm"
-                                                    variant={
-                                                        page === pageNum ? 'default' : 'outline'
-                                                    }
-                                                    disabled={isLoading}
-                                                    onClick={() => setPage(pageNum)}
-                                                    className="h-7 w-7 p-0 text-xs"
-                                                >
-                                                    {pageNum}
-                                                </Button>
-                                            )
-                                        })
-                                    ) : (
-                                        // Show smart pagination for more than 5 pages
-                                        <>
-                                            {page > 2 && (
-                                                <>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        disabled={isLoading}
-                                                        onClick={() => setPage(1)}
-                                                        className="h-7 w-7 p-0 text-xs"
-                                                    >
-                                                        1
-                                                    </Button>
-                                                    {page > 3 && (
-                                                        <span className="text-xs px-1">...</span>
-                                                    )}
-                                                </>
+                            {/* Pagination Info */}
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                {total > 0 ? (
+                                    <>
+                                        Page {page}/{totalPages} ({total} movies)
+                                    </>
+                                ) : (
+                                    <>No movies found</>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Movie List */}
+                        <div className="max-h-48 overflow-y-auto flex-1 bg-background">
+                            {isLoading ? (
+                                <div className="p-3 text-center text-muted-foreground">
+                                    Loading...
+                                </div>
+                            ) : movies && movies.length > 0 ? (
+                                movies.map((movie) => (
+                                    <button
+                                        key={movie.id}
+                                        type="button"
+                                        className={`w-full px-3 py-2 text-left hover:bg-accent focus:bg-accent border-0 transition-colors ${
+                                            movie.id === value ? 'bg-accent' : 'bg-background'
+                                        }`}
+                                        onClick={() => {
+                                            onValueChange(movie.id)
+                                            setIsOpen(false)
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <img
+                                                src={movie.poster}
+                                                alt={movie.name}
+                                                className="w-8 h-12 object-cover rounded"
+                                            />
+                                            <span className="flex-1 truncate">{movie.name}</span>
+                                            {movie.id === value && (
+                                                <span className="text-primary">✓</span>
                                             )}
+                                        </div>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="p-3 text-center text-muted-foreground">
+                                    No movies available
+                                </div>
+                            )}
+                        </div>
 
-                                            {Array.from({ length: 3 }, (_, i) => {
-                                                let pageNum
-                                                if (page === 1) {
-                                                    pageNum = i + 1
-                                                } else if (page === totalPages) {
-                                                    pageNum = totalPages - 2 + i
-                                                } else {
-                                                    pageNum = page - 1 + i
-                                                }
+                        {/* Pagination Footer - Always show when movies are loaded */}
+                        {!isLoading && movies && movies.length > 0 && (
+                            <div className="p-2 border-t bg-muted shrink-0">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={page <= 1 || isLoading}
+                                        onClick={() => setPage((prev) => prev - 1)}
+                                        className="h-7 px-2 text-xs shrink-0"
+                                        title="Previous page"
+                                    >
+                                        ◀
+                                    </Button>
 
-                                                if (pageNum < 1 || pageNum > totalPages) return null
-
+                                    <div className="flex gap-1 items-center flex-wrap justify-center">
+                                        {totalPages <= 5 ? (
+                                            // Show all pages if 5 or less
+                                            Array.from({ length: totalPages }, (_, i) => {
+                                                const pageNum = i + 1
                                                 return (
                                                     <Button
                                                         key={pageNum}
@@ -293,46 +261,98 @@ const PaginatedMovieSelect = ({
                                                         {pageNum}
                                                     </Button>
                                                 )
-                                            })}
+                                            })
+                                        ) : (
+                                            // Show smart pagination for more than 5 pages
+                                            <>
+                                                {page > 2 && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled={isLoading}
+                                                            onClick={() => setPage(1)}
+                                                            className="h-7 w-7 p-0 text-xs"
+                                                        >
+                                                            1
+                                                        </Button>
+                                                        {page > 3 && (
+                                                            <span className="text-xs px-1">
+                                                                ...
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                )}
 
-                                            {page < totalPages - 1 && (
-                                                <>
-                                                    {page < totalPages - 2 && (
-                                                        <span className="text-xs px-1">...</span>
-                                                    )}
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        disabled={isLoading}
-                                                        onClick={() => setPage(totalPages)}
-                                                        className="h-7 w-7 p-0 text-xs"
-                                                    >
-                                                        {totalPages}
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </>
-                                    )}
+                                                {Array.from({ length: 3 }, (_, i) => {
+                                                    let pageNum
+                                                    if (page === 1) {
+                                                        pageNum = i + 1
+                                                    } else if (page === totalPages) {
+                                                        pageNum = totalPages - 2 + i
+                                                    } else {
+                                                        pageNum = page - 1 + i
+                                                    }
+
+                                                    if (pageNum < 1 || pageNum > totalPages)
+                                                        return null
+
+                                                    return (
+                                                        <Button
+                                                            key={pageNum}
+                                                            size="sm"
+                                                            variant={
+                                                                page === pageNum
+                                                                    ? 'default'
+                                                                    : 'outline'
+                                                            }
+                                                            disabled={isLoading}
+                                                            onClick={() => setPage(pageNum)}
+                                                            className="h-7 w-7 p-0 text-xs"
+                                                        >
+                                                            {pageNum}
+                                                        </Button>
+                                                    )
+                                                })}
+
+                                                {page < totalPages - 1 && (
+                                                    <>
+                                                        {page < totalPages - 2 && (
+                                                            <span className="text-xs px-1">
+                                                                ...
+                                                            </span>
+                                                        )}
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            disabled={isLoading}
+                                                            onClick={() => setPage(totalPages)}
+                                                            className="h-7 w-7 p-0 text-xs"
+                                                        >
+                                                            {totalPages}
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={page >= totalPages || isLoading}
+                                        onClick={() => setPage((prev) => prev + 1)}
+                                        className="h-7 px-2 text-xs shrink-0"
+                                        title="Next page"
+                                    >
+                                        ▶
+                                    </Button>
                                 </div>
-
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={page >= totalPages || isLoading}
-                                    onClick={() => setPage((prev) => prev + 1)}
-                                    className="h-7 px-2 text-xs shrink-0"
-                                    title="Trang sau"
-                                >
-                                    ▶
-                                </Button>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                </>
             )}
-
-            {/* Click outside to close */}
-            {isOpen && <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />}
         </div>
     )
 }
@@ -354,8 +374,8 @@ const ShowTimePage = () => {
     const [isCreating, setIsCreating] = useState<boolean>(false)
     const [showCreateForm, setShowCreateForm] = useState<boolean>(false)
     const [editingShowTime, setEditingShowTime] = useState<ShowTime | null>(null)
-    const [showEditForm, setShowEditForm] = useState<boolean>(false)
     const [isUpdating, setIsUpdating] = useState<boolean>(false)
+    const [isTransitioning, setIsTransitioning] = useState<boolean>(false)
 
     // Form data for create
     const [formData, setFormData] = useState<CreateShowTimeRequest>({
@@ -388,7 +408,7 @@ const ShowTimePage = () => {
                 }
             } catch (error) {
                 console.error('Error fetching initial data:', error)
-                alert('Có lỗi xảy ra khi tải dữ liệu')
+                showToast.error('Error loading data')
             } finally {
                 setLoading(false)
             }
@@ -401,15 +421,24 @@ const ShowTimePage = () => {
     useEffect(() => {
         const fetchShowTimes = async () => {
             try {
+                // Trigger fade out animation
+                setIsTransitioning(true)
+
                 const response = await getShowTimesByDate(selectedDate)
                 console.log('ShowTimes response:', response)
                 if (response.success && response.data) {
                     console.log('ShowTimes data:', response.data)
                     setShowTimes(response.data)
                 }
+
+                // Trigger fade in animation after a short delay
+                setTimeout(() => {
+                    setIsTransitioning(false)
+                }, 100)
             } catch (error) {
                 console.error('Error fetching show times:', error)
-                alert('Có lỗi xảy ra khi tải lịch chiếu')
+                showToast.error('Error loading showtimes')
+                setIsTransitioning(false)
             }
         }
 
@@ -418,15 +447,21 @@ const ShowTimePage = () => {
         }
     }, [selectedDate])
 
+    // Update formData.showDate when selectedDate changes
+    useEffect(() => {
+        setFormData((prev) => ({
+            ...prev,
+            showDate: new Date(selectedDate)
+        }))
+    }, [selectedDate])
+
     // Format datetime for input field
-    const formatDateTimeForInput = (date: Date | string): string => {
+    // Format time only for input field (HH:MM)
+    const formatTimeForInput = (date: Date | string): string => {
         const d = new Date(date)
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
         const hours = String(d.getHours()).padStart(2, '0')
         const minutes = String(d.getMinutes()).padStart(2, '0')
-        return `${year}-${month}-${day}T${hours}:${minutes}`
+        return `${hours}:${minutes}`
     }
 
     // Format date for display
@@ -447,19 +482,19 @@ const ShowTimePage = () => {
         const errors: Record<string, string> = {}
 
         if (!formData.movieId) {
-            errors.movieId = 'Vui lòng chọn phim'
+            errors.movieId = 'Please select a movie'
         }
 
         if (!formData.roomId) {
-            errors.roomId = 'Vui lòng chọn phòng chiếu'
+            errors.roomId = 'Please select a room'
         }
 
         if (!formData.timeStart) {
-            errors.timeStart = 'Vui lòng chọn giờ bắt đầu'
+            errors.timeStart = 'Please select start time'
         }
 
         if (!formData.showDate) {
-            errors.showDate = 'Vui lòng chọn ngày chiếu'
+            errors.showDate = 'Please select show date'
         }
 
         setFormErrors(errors)
@@ -471,19 +506,19 @@ const ShowTimePage = () => {
         const errors: Record<string, string> = {}
 
         if (!editFormData.movieId) {
-            errors.movieId = 'Vui lòng chọn phim'
+            errors.movieId = 'Please select a movie'
         }
 
         if (!editFormData.roomId) {
-            errors.roomId = 'Vui lòng chọn phòng chiếu'
+            errors.roomId = 'Please select a room'
         }
 
         if (!editFormData.timeStart) {
-            errors.timeStart = 'Vui lòng chọn giờ bắt đầu'
+            errors.timeStart = 'Please select start time'
         }
 
         if (!editFormData.showDate) {
-            errors.showDate = 'Vui lòng chọn ngày chiếu'
+            errors.showDate = 'Please select show date'
         }
 
         setEditFormErrors(errors)
@@ -491,25 +526,28 @@ const ShowTimePage = () => {
     }
 
     // Handle create show time
-    const handleCreateShowTime = async (e: React.FormEvent) => {
-        e.preventDefault()
-
+    const handleCreateShowTime = async () => {
         if (!validateCreateForm()) {
             return
         }
 
         try {
             setIsCreating(true)
-            const response = await createShowTime(formData)
+            // Ensure showDate is set to selectedDate
+            const dataToSubmit = {
+                ...formData,
+                showDate: new Date(selectedDate)
+            }
+            const response = await createShowTime(dataToSubmit)
 
             if (response.success) {
-                alert('Thêm lịch chiếu thành công!')
+                showToast.success('Showtime created successfully!')
                 setShowCreateForm(false)
                 setFormData({
                     movieId: '',
                     roomId: '',
                     timeStart: new Date(),
-                    showDate: new Date()
+                    showDate: new Date(selectedDate)
                 })
                 setFormErrors({})
 
@@ -519,11 +557,11 @@ const ShowTimePage = () => {
                     setShowTimes(showTimesResponse.data)
                 }
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi thêm lịch chiếu')
+                showToast.error(response.message || 'Error creating showtime')
             }
         } catch (error) {
             console.error('Error creating show time:', error)
-            alert('Có lỗi xảy ra khi thêm lịch chiếu')
+            showToast.error('Error creating showtime')
         } finally {
             setIsCreating(false)
         }
@@ -538,13 +576,9 @@ const ShowTimePage = () => {
             timeStart: new Date(showTime.timeStart),
             showDate: new Date(showTime.showDate)
         })
-        setShowEditForm(true)
         setEditFormErrors({})
         // Close create form if it's open
         if (showCreateForm) setShowCreateForm(false)
-
-        // Scroll to top smoothly
-        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     // Handle update show time
@@ -560,8 +594,7 @@ const ShowTimePage = () => {
             const response = await updateShowTime(editingShowTime.id, editFormData)
 
             if (response.success) {
-                alert('Cập nhật lịch chiếu thành công!')
-                setShowEditForm(false)
+                showToast.success('Showtime updated successfully!')
                 setEditingShowTime(null)
                 setEditFormErrors({})
 
@@ -571,11 +604,11 @@ const ShowTimePage = () => {
                     setShowTimes(showTimesResponse.data)
                 }
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi cập nhật lịch chiếu')
+                showToast.error(response.message || 'Error updating showtime')
             }
         } catch (error) {
             console.error('Error updating show time:', error)
-            alert('Có lỗi xảy ra khi cập nhật lịch chiếu')
+            showToast.error('Error updating showtime')
         } finally {
             setIsUpdating(false)
         }
@@ -583,7 +616,7 @@ const ShowTimePage = () => {
 
     // Handle delete show time
     const handleDeleteShowTime = async (id: string) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa lịch chiếu này?')) {
+        if (!confirm('Are you sure you want to delete this showtime?')) {
             return
         }
 
@@ -591,7 +624,7 @@ const ShowTimePage = () => {
             const response = await deleteShowTime(id)
 
             if (response.success) {
-                alert('Xóa lịch chiếu thành công!')
+                showToast.success('Showtime deleted successfully!')
 
                 // Refresh show times list
                 const showTimesResponse = await getShowTimesByDate(selectedDate)
@@ -599,18 +632,18 @@ const ShowTimePage = () => {
                     setShowTimes(showTimesResponse.data)
                 }
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi xóa lịch chiếu')
+                showToast.error(response.message || 'Error deleting showtime')
             }
         } catch (error) {
             console.error('Error deleting show time:', error)
-            alert('Có lỗi xảy ra khi xóa lịch chiếu')
+            showToast.error('Error deleting showtime')
         }
     }
 
     if (loading) {
         return (
             <div className="container mx-auto py-8 px-4">
-                <div className="text-center">Đang tải...</div>
+                <div className="text-center">Loading...</div>
             </div>
         )
     }
@@ -618,472 +651,422 @@ const ShowTimePage = () => {
     return (
         <div className="container mx-auto py-8 px-4 space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-brand">Quản lý lịch chiếu</h1>
-                <Button
-                    onClick={() => {
-                        setShowCreateForm(!showCreateForm)
-                        if (showEditForm) setShowEditForm(false)
-                        // Reset editing state to return list to normal
-                        if (editingShowTime) setEditingShowTime(null)
-                    }}
-                    className="btn-primary hover:bg-[#e86d28]"
-                >
-                    {showCreateForm ? 'Ẩn form' : 'Thêm lịch chiếu'}
-                </Button>
+                <h1 className="text-3xl font-bold text-brand">Showtime Management</h1>
             </div>
 
             <div className="space-y-6">
                 {/* Date Selection */}
                 <div className="flex items-center gap-4">
-                    <Label htmlFor="date">Chọn ngày</Label>
-                    <Input
-                        id="date"
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                            setSelectedDate(e.target.value)
-                        }
-                        className="w-48"
-                    />
+                    <Label htmlFor="date">Select Date</Label>
+                    <div className="flex items-center gap-2">
+                        {/* Previous 2 days */}
+                        {[-2, -1].map((offset) => {
+                            const date = new Date(selectedDate)
+                            date.setDate(date.getDate() + offset)
+                            const dateStr = date.toISOString().split('T')[0]
+                            return (
+                                <Button
+                                    key={offset}
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedDate(dateStr)}
+                                    className="h-9 px-3 text-sm transition-all duration-200 hover:scale-105 hover:bg-brand/10 hover:border-brand/50"
+                                >
+                                    {date.getDate()}/{date.getMonth() + 1}
+                                </Button>
+                            )
+                        })}
+
+                        {/* Current date input */}
+                        <Input
+                            id="date"
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                setSelectedDate(e.target.value)
+                            }
+                            className="w-48 transition-all duration-200"
+                        />
+
+                        {/* Next 2 days */}
+                        {[1, 2].map((offset) => {
+                            const date = new Date(selectedDate)
+                            date.setDate(date.getDate() + offset)
+                            const dateStr = date.toISOString().split('T')[0]
+                            return (
+                                <Button
+                                    key={offset}
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setSelectedDate(dateStr)}
+                                    className="h-9 px-3 text-sm transition-all duration-200 hover:scale-105 hover:bg-brand/10 hover:border-brand/50"
+                                >
+                                    {date.getDate()}/{date.getMonth() + 1}
+                                </Button>
+                            )
+                        })}
+
+                        {/* Today button */}
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setSelectedDate(getLocalDateString(new Date()))}
+                            className="h-9 px-3 text-sm font-medium transition-all duration-200 hover:scale-105"
+                        >
+                            Today
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Create Form */}
-                {showCreateForm && (
-                    <Card className="border-brand/20">
-                        <CardHeader>
-                            <CardTitle className="text-lg">Thêm lịch chiếu mới</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleCreateShowTime} className="space-y-4">
-                                {/* Movie Selection */}
-                                <div className="space-y-2">
-                                    <Label>Chọn phim</Label>
-                                    <PaginatedMovieSelect
-                                        value={formData.movieId}
-                                        onValueChange={(movieId) =>
-                                            setFormData({ ...formData, movieId })
-                                        }
-                                        placeholder="Chọn phim từ danh sách"
-                                    />
-                                    {formErrors.movieId && (
-                                        <p className="text-sm text-red-500">{formErrors.movieId}</p>
-                                    )}
-                                </div>
-
-                                {/* Room, Time, Date Selection */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="room">Phòng chiếu</Label>
-                                        <Select
-                                            value={formData.roomId}
-                                            onValueChange={(value) =>
-                                                setFormData({ ...formData, roomId: value })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Chọn phòng chiếu" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-popover/95 backdrop-blur-sm border-border">
-                                                {rooms.map((room) => (
-                                                    <SelectItem
-                                                        key={room.id}
-                                                        value={room.id}
-                                                        className="hover:bg-accent focus:bg-accent"
-                                                    >
-                                                        {room.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {formErrors.roomId && (
-                                            <p className="text-sm text-red-500">
-                                                {formErrors.roomId}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="timeStart">Giờ bắt đầu</Label>
-                                        <Input
-                                            id="timeStart"
-                                            type="datetime-local"
-                                            value={formatDateTimeForInput(formData.timeStart)}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    timeStart: new Date(e.target.value)
-                                                })
-                                            }
-                                        />
-                                        {formErrors.timeStart && (
-                                            <p className="text-sm text-red-500">
-                                                {formErrors.timeStart}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="showDate">Ngày chiếu</Label>
-                                        <Input
-                                            id="showDate"
-                                            type="date"
-                                            value={
-                                                formData.showDate instanceof Date
-                                                    ? getLocalDateString(formData.showDate)
-                                                    : formData.showDate
-                                            }
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    showDate: new Date(e.target.value)
-                                                })
-                                            }
-                                        />
-                                        {formErrors.showDate && (
-                                            <p className="text-sm text-red-500">
-                                                {formErrors.showDate}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    <Button
-                                        type="submit"
-                                        disabled={isCreating}
-                                        className="btn-primary hover:bg-[#e86d28]"
-                                    >
-                                        {isCreating ? 'Đang tạo...' : 'Tạo lịch chiếu'}
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            setShowCreateForm(false)
-                                            setFormErrors({})
-                                        }}
-                                    >
-                                        Hủy
-                                    </Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {/* Edit Form */}
-                {showEditForm && editingShowTime && (
-                    <Card className="border-brand/20">
-                        <CardHeader>
-                            <CardTitle className="text-lg">Chỉnh sửa lịch chiếu</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleUpdateShowTime} className="space-y-4">
-                                {/* Movie Selection */}
-                                <div className="space-y-2">
-                                    <Label>Chọn phim</Label>
-                                    <PaginatedMovieSelect
-                                        value={editFormData.movieId || ''}
-                                        onValueChange={(movieId) =>
-                                            setEditFormData({ ...editFormData, movieId })
-                                        }
-                                        placeholder="Chọn phim từ danh sách"
-                                    />
-                                    {editFormErrors.movieId && (
-                                        <p className="text-sm text-red-500">
-                                            {editFormErrors.movieId}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Room, Time, Date Selection */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="editRoom">Phòng chiếu</Label>
-                                        <Select
-                                            value={editFormData.roomId}
-                                            onValueChange={(value) =>
-                                                setEditFormData({ ...editFormData, roomId: value })
-                                            }
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Chọn phòng chiếu" />
-                                            </SelectTrigger>
-                                            <SelectContent className="bg-popover/95 backdrop-blur-sm border-border">
-                                                {rooms.map((room) => (
-                                                    <SelectItem
-                                                        key={room.id}
-                                                        value={room.id}
-                                                        className="hover:bg-accent focus:bg-accent"
-                                                    >
-                                                        {room.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {editFormErrors.roomId && (
-                                            <p className="text-sm text-red-500">
-                                                {editFormErrors.roomId}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="editTimeStart">Giờ bắt đầu</Label>
-                                        <Input
-                                            id="editTimeStart"
-                                            type="datetime-local"
-                                            value={formatDateTimeForInput(
-                                                editFormData.timeStart || new Date()
-                                            )}
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setEditFormData({
-                                                    ...editFormData,
-                                                    timeStart: new Date(e.target.value)
-                                                })
-                                            }
-                                        />
-                                        {editFormErrors.timeStart && (
-                                            <p className="text-sm text-red-500">
-                                                {editFormErrors.timeStart}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="editShowDate">Ngày chiếu</Label>
-                                        <Input
-                                            id="editShowDate"
-                                            type="date"
-                                            value={
-                                                editFormData.showDate instanceof Date
-                                                    ? getLocalDateString(editFormData.showDate)
-                                                    : editFormData.showDate
-                                            }
-                                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                                setEditFormData({
-                                                    ...editFormData,
-                                                    showDate: new Date(e.target.value)
-                                                })
-                                            }
-                                        />
-                                        {editFormErrors.showDate && (
-                                            <p className="text-sm text-red-500">
-                                                {editFormErrors.showDate}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    <Button
-                                        type="submit"
-                                        disabled={isUpdating}
-                                        className="btn-primary hover:bg-[#e86d28]"
-                                    >
-                                        {isUpdating ? 'Đang cập nhật...' : 'Cập nhật'}
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => {
-                                            setShowEditForm(false)
-                                            setEditingShowTime(null)
-                                            setEditFormErrors({})
-                                        }}
-                                    >
-                                        Hủy
-                                    </Button>
-                                </div>
-                            </form>
-                        </CardContent>
-                    </Card>
-                )}
-
                 {/* Show Times List */}
-                <Card>
+                <Card className="border-0 shadow-none">
                     <CardHeader>
-                        <CardTitle>
-                            Lịch chiếu ngày {formatDate(selectedDate)} ({showTimes.length} suất
-                            chiếu)
-                        </CardTitle>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>
+                                Showtimes for {formatDate(selectedDate)} ({showTimes.length}{' '}
+                                sessions)
+                            </CardTitle>
+                            <Button
+                                onClick={() => {
+                                    setShowCreateForm(!showCreateForm)
+                                    // Reset editing state
+                                    if (editingShowTime) setEditingShowTime(null)
+                                }}
+                                className="btn-primary hover:bg-[#e86d28]"
+                                disabled={!selectedDate}
+                            >
+                                {showCreateForm ? 'Cancel' : 'Add Showtime'}
+                            </Button>
+                        </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent
+                        className={`transition-all duration-300 ease-in-out ${
+                            isTransitioning
+                                ? 'opacity-0 translate-y-2'
+                                : 'opacity-100 translate-y-0'
+                        }`}
+                    >
                         {showTimes.length === 0 ? (
                             <p className="text-center text-muted-foreground py-8">
-                                Không có lịch chiếu nào cho ngày này
+                                No showtimes available for this date
                             </p>
                         ) : (
-                            <div className="space-y-6 transition-all duration-500">
-                                {/* Group show times by movie */}
-                                {Object.entries(
-                                    showTimes.reduce(
-                                        (groups, showTime) => {
-                                            if (!showTime.movie) return groups
-
-                                            const movieId = showTime.movie.id
-                                            if (!groups[movieId]) {
-                                                groups[movieId] = {
-                                                    movie: showTime.movie,
-                                                    times: []
-                                                }
-                                            }
-                                            groups[movieId].times.push(showTime)
-                                            return groups
-                                        },
-                                        {} as Record<string, { movie: Movie; times: ShowTime[] }>
-                                    )
-                                )
-                                    // Sort: movie being edited first, then others
-                                    .sort(([, { times: timesA }], [, { times: timesB }]) => {
-                                        const isEditingA =
-                                            editingShowTime &&
-                                            timesA.some((t) => t.id === editingShowTime.id)
-                                        const isEditingB =
-                                            editingShowTime &&
-                                            timesB.some((t) => t.id === editingShowTime.id)
-
-                                        if (isEditingA && !isEditingB) return -1 // A lên đầu
-                                        if (!isEditingA && isEditingB) return 1 // B lên đầu
-                                        return 0 // Giữ nguyên thứ tự
-                                    })
-                                    .map(([movieId, { movie, times }]) => {
-                                        // Check if this movie group contains the editing showtime
-                                        const isEditingThisMovie =
-                                            editingShowTime &&
-                                            times.some((t) => t.id === editingShowTime.id)
-
-                                        return (
-                                            <Card
-                                                key={movieId}
-                                                className={`border-brand/10 overflow-hidden transition-all duration-500 ease-in-out ${isEditingThisMovie ? 'ring-2 ring-brand shadow-lg scale-[1.01]' : ''}`}
-                                                style={{
-                                                    animation: isEditingThisMovie
-                                                        ? 'slideToTop 0.5s ease-out'
-                                                        : 'none'
-                                                }}
-                                            >
-                                                <CardContent className="p-0">
-                                                    {/* Movie Header - Compact */}
-                                                    <div
-                                                        className={`flex gap-3 p-3 transition-all ${isEditingThisMovie ? 'bg-brand/10' : 'bg-muted/30'}`}
-                                                    >
-                                                        <img
-                                                            src={movie.poster}
-                                                            alt={movie.name}
-                                                            className="w-16 h-24 object-cover rounded shadow-sm"
+                            <div className="-my-1">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[60px]">No.</TableHead>
+                                            <TableHead>Movie</TableHead>
+                                            <TableHead className="text-center">Room</TableHead>
+                                            <TableHead className="text-center">
+                                                Start Time
+                                            </TableHead>
+                                            <TableHead className="text-center">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {/* Inline creation row */}
+                                        {showCreateForm && (
+                                            <TableRow className="bg-brand/10">
+                                                <TableCell className="font-medium">New</TableCell>
+                                                <TableCell>
+                                                    <div className="space-y-2">
+                                                        <PaginatedMovieSelect
+                                                            value={formData.movieId}
+                                                            onValueChange={(value) =>
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    movieId: value
+                                                                })
+                                                            }
                                                         />
-                                                        <div className="flex-1">
-                                                            <h3 className="text-lg font-bold mb-1 line-clamp-2">
-                                                                {movie.name}
-                                                            </h3>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {times.length} suất chiếu
+                                                        {formErrors.movieId && (
+                                                            <p className="text-sm text-destructive">
+                                                                {formErrors.movieId}
                                                             </p>
-                                                        </div>
+                                                        )}
                                                     </div>
-
-                                                    {/* Show Times Grid - Compact */}
-                                                    <div className="p-3">
-                                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                                                            {times
-                                                                .sort(
-                                                                    (a, b) =>
-                                                                        new Date(
-                                                                            a.timeStart
-                                                                        ).getTime() -
-                                                                        new Date(
-                                                                            b.timeStart
-                                                                        ).getTime()
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="space-y-2">
+                                                        <Select
+                                                            value={formData.roomId}
+                                                            onValueChange={(value) =>
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    roomId: value
+                                                                })
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="h-9">
+                                                                <SelectValue placeholder="Select room" />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="bg-background/95 backdrop-blur-sm border-border">
+                                                                {rooms.map((room) => (
+                                                                    <SelectItem
+                                                                        key={room.id}
+                                                                        value={room.id}
+                                                                        className="bg-background hover:bg-accent focus:bg-accent"
+                                                                    >
+                                                                        {room.name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {formErrors.roomId && (
+                                                            <p className="text-sm text-destructive">
+                                                                {formErrors.roomId}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <div className="space-y-2">
+                                                        <Input
+                                                            type="time"
+                                                            value={formatTimeForInput(
+                                                                formData.timeStart
+                                                            )}
+                                                            onChange={(e) => {
+                                                                const [hours, minutes] =
+                                                                    e.target.value.split(':')
+                                                                const newDate = new Date(
+                                                                    formData.timeStart
                                                                 )
-                                                                .map((showTime) => {
-                                                                    const isEditing =
-                                                                        editingShowTime?.id ===
-                                                                        showTime.id
-                                                                    return (
-                                                                        <div
-                                                                            key={showTime.id}
-                                                                            className={`group relative border rounded-lg p-2 hover:border-brand hover:bg-brand/5 transition-all cursor-pointer ${
-                                                                                isEditing
-                                                                                    ? 'border-blue-500 bg-brand/10 ring-2 ring-blue-500 shadow-md'
-                                                                                    : 'border-border'
-                                                                            }`}
-                                                                        >
-                                                                            {/* Time Display - Compact */}
-                                                                            <div className="flex items-center justify-between mb-1">
-                                                                                <span className="text-xl font-bold text-brand">
-                                                                                    {formatTime(
-                                                                                        showTime.timeStart
-                                                                                    )}
-                                                                                </span>
-                                                                            </div>
-
-                                                                            {/* Room Info - Compact */}
-                                                                            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                                                                                <svg
-                                                                                    className="w-3 h-3"
-                                                                                    fill="none"
-                                                                                    stroke="currentColor"
-                                                                                    viewBox="0 0 24 24"
-                                                                                >
-                                                                                    <path
-                                                                                        strokeLinecap="round"
-                                                                                        strokeLinejoin="round"
-                                                                                        strokeWidth={
-                                                                                            2
-                                                                                        }
-                                                                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                                                                                    />
-                                                                                </svg>
-                                                                                <span className="truncate">
-                                                                                    {showTime.room
-                                                                                        ?.name ||
-                                                                                        'N/A'}
-                                                                                </span>
-                                                                            </div>
-
-                                                                            {/* Action Buttons - Compact */}
-                                                                            <div
-                                                                                className={`flex gap-1 transition-opacity ${
-                                                                                    isEditing
-                                                                                        ? 'opacity-100'
-                                                                                        : 'opacity-0 group-hover:opacity-100'
-                                                                                }`}
-                                                                            >
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="outline"
-                                                                                    onClick={() =>
-                                                                                        handleEditShowTime(
-                                                                                            showTime
-                                                                                        )
-                                                                                    }
-                                                                                    className="flex-1 h-7 text-xs px-2"
-                                                                                >
-                                                                                    Sửa
-                                                                                </Button>
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    variant="destructive"
-                                                                                    onClick={() =>
-                                                                                        handleDeleteShowTime(
-                                                                                            showTime.id
-                                                                                        )
-                                                                                    }
-                                                                                    className="flex-1 h-7 text-xs px-2"
-                                                                                >
-                                                                                    Xóa
-                                                                                </Button>
-                                                                            </div>
-                                                                        </div>
-                                                                    )
-                                                                })}
-                                                        </div>
+                                                                newDate.setHours(
+                                                                    parseInt(hours),
+                                                                    parseInt(minutes)
+                                                                )
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    timeStart: newDate
+                                                                })
+                                                            }}
+                                                            className="h-9"
+                                                        />
+                                                        {formErrors.timeStart && (
+                                                            <p className="text-sm text-destructive">
+                                                                {formErrors.timeStart}
+                                                            </p>
+                                                        )}
                                                     </div>
-                                                </CardContent>
-                                            </Card>
-                                        )
-                                    })}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={handleCreateShowTime}
+                                                            disabled={isCreating}
+                                                            className="h-9 w-9 p-0 text-brand border-brand hover:bg-brand hover:text-white"
+                                                        >
+                                                            ✓
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setShowCreateForm(false)
+                                                                setFormData({
+                                                                    movieId: '',
+                                                                    roomId: '',
+                                                                    showDate: new Date(),
+                                                                    timeStart: new Date()
+                                                                })
+                                                                setFormErrors({})
+                                                            }}
+                                                            className="h-9 w-9 p-0"
+                                                        >
+                                                            ✕
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {showTimes
+                                            .sort((a, b) => {
+                                                // First, sort by movie name to group same movies together
+                                                const movieComparison = a.movie.name.localeCompare(
+                                                    b.movie.name
+                                                )
+                                                if (movieComparison !== 0) return movieComparison
+
+                                                // Then sort by start time within the same movie
+                                                return (
+                                                    new Date(a.timeStart).getTime() -
+                                                    new Date(b.timeStart).getTime()
+                                                )
+                                            })
+                                            .map((showTime, index) => {
+                                                const isEditing =
+                                                    editingShowTime?.id === showTime.id
+
+                                                return (
+                                                    <TableRow
+                                                        key={showTime.id}
+                                                        className={isEditing ? 'bg-brand/10' : ''}
+                                                    >
+                                                        <TableCell className="font-medium">
+                                                            {index + 1}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-3">
+                                                                <img
+                                                                    src={showTime.movie.poster}
+                                                                    alt={showTime.movie.name}
+                                                                    className="w-10 h-14 object-cover rounded shadow-sm"
+                                                                />
+                                                                <span className="font-medium">
+                                                                    {showTime.movie.name}
+                                                                </span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-center">
+                                                            {isEditing ? (
+                                                                <div className="space-y-2">
+                                                                    <Select
+                                                                        value={editFormData.roomId}
+                                                                        onValueChange={(value) =>
+                                                                            setEditFormData({
+                                                                                ...editFormData,
+                                                                                roomId: value
+                                                                            })
+                                                                        }
+                                                                    >
+                                                                        <SelectTrigger className="h-9">
+                                                                            <SelectValue placeholder="Select room" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent className="bg-background/95 backdrop-blur-sm border-border">
+                                                                            {rooms.map((room) => (
+                                                                                <SelectItem
+                                                                                    key={room.id}
+                                                                                    value={room.id}
+                                                                                    className="bg-background hover:bg-accent focus:bg-accent"
+                                                                                >
+                                                                                    {room.name}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    {editFormErrors.roomId && (
+                                                                        <p className="text-xs text-red-500">
+                                                                            {editFormErrors.roomId}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                showTime.room?.name || 'N/A'
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell className="font-semibold text-brand text-center">
+                                                            {isEditing ? (
+                                                                <div className="space-y-2">
+                                                                    <Input
+                                                                        type="time"
+                                                                        value={formatTimeForInput(
+                                                                            editFormData.timeStart ||
+                                                                                new Date()
+                                                                        )}
+                                                                        onChange={(
+                                                                            e: React.ChangeEvent<HTMLInputElement>
+                                                                        ) => {
+                                                                            // Parse time and combine with current date
+                                                                            const [hours, minutes] =
+                                                                                e.target.value.split(
+                                                                                    ':'
+                                                                                )
+                                                                            const newDate =
+                                                                                new Date(
+                                                                                    editFormData.timeStart ||
+                                                                                        new Date()
+                                                                                )
+                                                                            newDate.setHours(
+                                                                                parseInt(hours)
+                                                                            )
+                                                                            newDate.setMinutes(
+                                                                                parseInt(minutes)
+                                                                            )
+                                                                            setEditFormData({
+                                                                                ...editFormData,
+                                                                                timeStart: newDate
+                                                                            })
+                                                                        }}
+                                                                        className="h-9"
+                                                                    />
+                                                                    {editFormErrors.timeStart && (
+                                                                        <p className="text-xs text-red-500">
+                                                                            {
+                                                                                editFormErrors.timeStart
+                                                                            }
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                formatTime(showTime.timeStart)
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {isEditing ? (
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault()
+                                                                            handleUpdateShowTime(e)
+                                                                        }}
+                                                                        disabled={isUpdating}
+                                                                        className="h-8 w-8 p-0 bg-[#e86d28] hover:bg-[#d35f1a] text-white"
+                                                                    >
+                                                                        ✓
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() => {
+                                                                            setEditingShowTime(null)
+                                                                            setEditFormErrors({})
+                                                                        }}
+                                                                        disabled={isUpdating}
+                                                                        className="h-8 w-8 p-0"
+                                                                    >
+                                                                        ✕
+                                                                    </Button>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="outline"
+                                                                        onClick={() =>
+                                                                            handleEditShowTime(
+                                                                                showTime
+                                                                            )
+                                                                        }
+                                                                        className="h-8 px-3"
+                                                                    >
+                                                                        Edit
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        variant="destructive"
+                                                                        onClick={() =>
+                                                                            handleDeleteShowTime(
+                                                                                showTime.id
+                                                                            )
+                                                                        }
+                                                                        className="h-8 px-3"
+                                                                    >
+                                                                        Delete
+                                                                    </Button>
+                                                                </div>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
+                                    </TableBody>
+                                </Table>
                             </div>
                         )}
                     </CardContent>

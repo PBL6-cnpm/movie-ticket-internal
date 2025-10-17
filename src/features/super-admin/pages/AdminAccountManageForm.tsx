@@ -16,6 +16,7 @@ import {
     CardHeader,
     CardTitle
 } from '@/shared/components/ui/card'
+import { Checkbox } from '@/shared/components/ui/checkbox'
 import { Input } from '@/shared/components/ui/input'
 import {
     Select,
@@ -24,6 +25,7 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/shared/components/ui/select'
+import { showToast } from '@/shared/utils/toast'
 import React, { useEffect, useState } from 'react'
 import {
     AccountStatus,
@@ -41,9 +43,8 @@ const AdminAccountManageForm: React.FC = () => {
     const [isCreating, setIsCreating] = useState<boolean>(false)
     const [showCreateForm, setShowCreateForm] = useState<boolean>(false)
 
-    // Edit states
+    // Edit states - inline editing in table
     const [editingAccount, setEditingAccount] = useState<AdminAccount | null>(null)
-    const [showEditForm, setShowEditForm] = useState<boolean>(false)
     const [isUpdating, setIsUpdating] = useState<boolean>(false)
 
     // Form states
@@ -58,12 +59,12 @@ const AdminAccountManageForm: React.FC = () => {
     // Edit form states
     const [editFormData, setEditFormData] = useState<UpdateAdminAccountRequest>({
         email: '',
-        password: '',
         fullName: '',
         phoneNumber: '',
         branchId: '',
         status: AccountStatus.ACTIVE,
         roleIds: []
+        // password is undefined by default (keep current password)
     })
 
     // Form validation
@@ -129,7 +130,7 @@ const AdminAccountManageForm: React.FC = () => {
                 console.log('Loaded roles:', rolesResponse.data)
             } catch (error) {
                 console.error('Error fetching data:', error)
-                alert('Có lỗi xảy ra khi tải dữ liệu')
+                showToast.error('An error occurred while loading data')
             } finally {
                 setLoading(false)
             }
@@ -143,29 +144,29 @@ const AdminAccountManageForm: React.FC = () => {
         const errors: Record<string, string> = {}
 
         if (!formData.email.trim()) {
-            errors.email = 'Email là bắt buộc'
+            errors.email = 'Email is required'
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            errors.email = 'Email không hợp lệ'
+            errors.email = 'Invalid email'
         }
 
         if (!formData.password.trim()) {
-            errors.password = 'Mật khẩu là bắt buộc'
+            errors.password = 'Password is required'
         } else if (formData.password.length < 6) {
-            errors.password = 'Mật khẩu phải có ít nhất 6 ký tự'
+            errors.password = 'Password must be at least 6 characters'
         }
 
         if (!formData.fullName.trim()) {
-            errors.fullName = 'Họ tên là bắt buộc'
+            errors.fullName = 'Full name is required'
         }
 
         if (!formData.phoneNumber.trim()) {
-            errors.phoneNumber = 'Số điện thoại là bắt buộc'
+            errors.phoneNumber = 'Phone number is required'
         } else if (!/^[0-9]{10,11}$/.test(formData.phoneNumber)) {
-            errors.phoneNumber = 'Số điện thoại không hợp lệ'
+            errors.phoneNumber = 'Invalid phone number'
         }
 
         if (!formData.branchId) {
-            errors.branchId = 'Vui lòng chọn chi nhánh'
+            errors.branchId = 'Please select a branch'
         }
 
         setFormErrors(errors)
@@ -221,16 +222,20 @@ const AdminAccountManageForm: React.FC = () => {
                 })
                 setShowCreateForm(false)
 
-                alert(`Tài khoản admin "${newAdminAccount.fullName}" đã được tạo thành công!`)
+                showToast.success(
+                    `Admin account "${newAdminAccount.fullName}" has been created successfully!`
+                )
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi tạo tài khoản admin')
+                showToast.error(
+                    response.message || 'An error occurred while creating admin account'
+                )
             }
         } catch (error: unknown) {
             console.error('Error creating admin account:', error)
             const apiError = error as { response?: { data?: { message?: string } } }
             const errorMessage =
-                apiError.response?.data?.message || 'Có lỗi xảy ra khi tạo tài khoản admin'
-            alert(errorMessage)
+                apiError.response?.data?.message || 'An error occurred while creating admin account'
+            showToast.error(errorMessage)
         } finally {
             setIsCreating(false)
         }
@@ -281,12 +286,12 @@ const AdminAccountManageForm: React.FC = () => {
                 setActiveTab('search') // Switch to search tab after successful search
                 return true
             } else {
-                alert('Vui lòng nhập ít nhất một tiêu chí tìm kiếm')
+                showToast.warning('Please enter at least one search criteria')
                 return false
             }
         } catch (error) {
             console.error('Search error:', error)
-            alert('Có lỗi xảy ra khi tìm kiếm')
+            showToast.error('An error occurred while searching')
             setSearchResults([])
             setSearchTotalItems(0)
             setActiveTab('search') // Still switch to search tab to show empty result
@@ -372,12 +377,12 @@ const AdminAccountManageForm: React.FC = () => {
         return (
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
                 <div className="text-sm text-gray-600">
-                    Hiển thị {(currentPage - 1) * pageSize + 1} -{' '}
+                    Showing {(currentPage - 1) * pageSize + 1} -{' '}
                     {Math.min(
                         currentPage * pageSize,
                         activeTab === 'all' ? totalItems : searchTotalItems
                     )}{' '}
-                    trong tổng số {activeTab === 'all' ? totalItems : searchTotalItems} kết quả
+                    of {activeTab === 'all' ? totalItems : searchTotalItems} results
                 </div>
                 <div className="flex space-x-1">
                     <button
@@ -385,7 +390,7 @@ const AdminAccountManageForm: React.FC = () => {
                         disabled={currentPage === 1}
                         className="px-3 py-2 text-sm text-orange-600 hover:bg-orange-50/40 rounded-md disabled:text-gray-400 disabled:hover:bg-transparent"
                     >
-                        ← Trước
+                        ← Previous
                     </button>
                     {renderPageNumbers()}
                     <button
@@ -393,7 +398,7 @@ const AdminAccountManageForm: React.FC = () => {
                         disabled={currentPage === totalPages}
                         className="px-3 py-2 text-sm text-orange-600 hover:bg-orange-50/40 rounded-md disabled:text-gray-400 disabled:hover:bg-transparent"
                     >
-                        Sau →
+                        Next →
                     </button>
                 </div>
             </div>
@@ -419,7 +424,7 @@ const AdminAccountManageForm: React.FC = () => {
         setEditingAccount(account)
         setEditFormData({
             email: account.email,
-            password: '', // Leave empty for security
+            // password is undefined (keep current password)
             fullName: account.fullName,
             phoneNumber: account.phoneNumber || '',
             branchId: account.branchId,
@@ -427,8 +432,7 @@ const AdminAccountManageForm: React.FC = () => {
             roleIds: accountRoleIds
         })
         setEditFormErrors({})
-        setShowEditForm(true)
-        setShowCreateForm(false) // Close create form if open
+        // Removed setShowEditForm - will edit inline
     }
 
     // Handle edit form input changes
@@ -455,27 +459,27 @@ const AdminAccountManageForm: React.FC = () => {
         const errors: Record<string, string> = {}
 
         if (!editFormData.email.trim()) {
-            errors.email = 'Email là bắt buộc'
+            errors.email = 'Email is required'
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email)) {
-            errors.email = 'Email không hợp lệ'
+            errors.email = 'Invalid email'
         }
 
         if (!editFormData.fullName.trim()) {
-            errors.fullName = 'Họ tên là bắt buộc'
+            errors.fullName = 'Full name is required'
         }
 
         if (!editFormData.phoneNumber.trim()) {
-            errors.phoneNumber = 'Số điện thoại là bắt buộc'
+            errors.phoneNumber = 'Phone number is required'
         } else if (!/^[0-9]{10,11}$/.test(editFormData.phoneNumber)) {
-            errors.phoneNumber = 'Số điện thoại không hợp lệ'
+            errors.phoneNumber = 'Invalid phone number'
         }
 
         if (!editFormData.branchId) {
-            errors.branchId = 'Vui lòng chọn chi nhánh'
+            errors.branchId = 'Please select a branch'
         }
 
         if (editFormData.roleIds.length === 0) {
-            errors.roleIds = 'Vui lòng chọn ít nhất một role'
+            errors.roleIds = 'Please select at least one role'
         }
 
         setEditFormErrors(errors)
@@ -492,7 +496,22 @@ const AdminAccountManageForm: React.FC = () => {
         try {
             console.log('Updating admin account:', editingAccount.id, editFormData)
 
-            const response = await updateAccount(editingAccount.id, editFormData)
+            // Build update data - omit password if empty (keep current password)
+            const updateData: UpdateAdminAccountRequest = {
+                email: editFormData.email,
+                fullName: editFormData.fullName,
+                phoneNumber: editFormData.phoneNumber,
+                branchId: editFormData.branchId,
+                status: editFormData.status,
+                roleIds: editFormData.roleIds
+            }
+
+            // Only include password if user entered a new one
+            if (editFormData.password && editFormData.password.trim()) {
+                updateData.password = editFormData.password.trim()
+            }
+
+            const response = await updateAccount(editingAccount.id, updateData)
 
             if (response.success && response.data) {
                 const updatedAccount: AdminAccount = response.data
@@ -504,19 +523,32 @@ const AdminAccountManageForm: React.FC = () => {
                     )
                 )
 
-                setShowEditForm(false)
                 setEditingAccount(null)
+                setEditFormData({
+                    email: '',
+                    fullName: '',
+                    phoneNumber: '',
+                    branchId: '',
+                    status: AccountStatus.ACTIVE,
+                    roleIds: []
+                    // password is undefined (keep current password)
+                })
+                setEditFormErrors({})
 
-                alert(`Tài khoản admin "${updatedAccount.fullName}" đã được cập nhật thành công!`)
+                showToast.success(
+                    `Admin account "${updatedAccount.fullName}" has been updated successfully!`
+                )
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi cập nhật tài khoản admin')
+                showToast.error(
+                    response.message || 'An error occurred while updating admin account'
+                )
             }
         } catch (error: unknown) {
             console.error('Error updating admin account:', error)
             const apiError = error as { response?: { data?: { message?: string } } }
             const errorMessage =
-                apiError.response?.data?.message || 'Có lỗi xảy ra khi cập nhật tài khoản admin'
-            alert(errorMessage)
+                apiError.response?.data?.message || 'An error occurred while updating admin account'
+            showToast.error(errorMessage)
         } finally {
             setIsUpdating(false)
         }
@@ -526,15 +558,14 @@ const AdminAccountManageForm: React.FC = () => {
     const handleCancelEdit = () => {
         setEditFormData({
             email: '',
-            password: '',
             fullName: '',
             phoneNumber: '',
             branchId: '',
             status: AccountStatus.ACTIVE,
             roleIds: []
+            // password is undefined (keep current password)
         })
         setEditFormErrors({})
-        setShowEditForm(false)
         setEditingAccount(null)
     }
 
@@ -550,746 +581,746 @@ const AdminAccountManageForm: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-brand p-6">
-            <div className="max-w-7xl mx-auto">
-                <div className="space-y-6">
-                    {/* Header */}
-                    <Card className="bg-surface border-surface">
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="text-primary">
-                                        Quản lý Tài khoản Admin
-                                    </CardTitle>
-                                    <CardDescription className="text-secondary">
-                                        Quản lý danh sách tài khoản admin và tạo tài khoản mới
-                                    </CardDescription>
-                                </div>
-                                <Button
-                                    onClick={() => setShowCreateForm(true)}
-                                    className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                    disabled={showCreateForm || showEditForm}
-                                >
-                                    Tạo Admin Mới
-                                </Button>
-                            </div>
-                        </CardHeader>
-                    </Card>
-
-                    {/* Search Form */}
-                    <Card className="bg-surface border-surface">
-                        <CardHeader>
-                            <CardTitle className="text-primary">Tìm kiếm Admin</CardTitle>
+        <div className="space-y-6">
+            {/* Header */}
+            <Card className="border-0">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle className="text-primary">Admin Account Management</CardTitle>
                             <CardDescription className="text-secondary">
-                                Tìm kiếm admin theo tên, email hoặc số điện thoại
+                                Manage admin accounts and create new accounts
                             </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        </div>
+                        <Button
+                            onClick={() => setShowCreateForm(true)}
+                            className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
+                            disabled={showCreateForm || editingAccount !== null}
+                        >
+                            Create New Admin
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            {/* Search Form */}
+            <Card className="bg-surface border-surface">
+                <CardHeader>
+                    <CardTitle className="text-primary">Search Admin</CardTitle>
+                    <CardDescription className="text-secondary">
+                        Search admins by name, email, or phone number
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <Input
+                                placeholder="Search by name..."
+                                value={searchParams.name || ''}
+                                onChange={(e) =>
+                                    setSearchParams((prev) => ({
+                                        ...prev,
+                                        name: e.target.value
+                                    }))
+                                }
+                                className="input-field"
+                            />
+                        </div>
+                        <div>
+                            <Input
+                                placeholder="Search by email..."
+                                value={searchParams.email || ''}
+                                onChange={(e) =>
+                                    setSearchParams((prev) => ({
+                                        ...prev,
+                                        email: e.target.value
+                                    }))
+                                }
+                                className="input-field"
+                            />
+                        </div>
+                        <div>
+                            <Input
+                                placeholder="Search by phone..."
+                                value={searchParams.phoneNumber || ''}
+                                onChange={(e) =>
+                                    setSearchParams((prev) => ({
+                                        ...prev,
+                                        phoneNumber: e.target.value
+                                    }))
+                                }
+                                className="input-field"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={handleSearch}
+                                disabled={isSearching}
+                                className="btn-primary flex-1"
+                            >
+                                {isSearching ? 'Searching...' : 'Search'}
+                            </Button>
+                            <Button
+                                onClick={handleClearSearch}
+                                variant="outline"
+                                disabled={isSearching}
+                                className="flex-1"
+                            >
+                                Clear Filter
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Create Form */}
+            {showCreateForm && (
+                <Card className="bg-surface border-surface">
+                    <CardHeader>
+                        <CardTitle className="text-primary">Create New Admin Account</CardTitle>
+                        <CardDescription className="text-secondary">
+                            Enter information to create a new admin account
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                {/* Email */}
                                 <div>
+                                    <label className="text-sm font-medium text-primary block mb-2">
+                                        Email *
+                                    </label>
                                     <Input
-                                        placeholder="Tìm theo tên..."
-                                        value={searchParams.name || ''}
-                                        onChange={(e) =>
-                                            setSearchParams((prev) => ({
-                                                ...prev,
-                                                name: e.target.value
-                                            }))
-                                        }
-                                        className="input-field"
+                                        type="email"
+                                        placeholder="admin@example.com"
+                                        value={formData.email}
+                                        onChange={(e) => handleInputChange('email', e.target.value)}
+                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                            formErrors.email ? 'border-red-500' : ''
+                                        }`}
                                     />
-                                </div>
-                                <div>
-                                    <Input
-                                        placeholder="Tìm theo email..."
-                                        value={searchParams.email || ''}
-                                        onChange={(e) =>
-                                            setSearchParams((prev) => ({
-                                                ...prev,
-                                                email: e.target.value
-                                            }))
-                                        }
-                                        className="input-field"
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        placeholder="Tìm theo số điện thoại..."
-                                        value={searchParams.phoneNumber || ''}
-                                        onChange={(e) =>
-                                            setSearchParams((prev) => ({
-                                                ...prev,
-                                                phoneNumber: e.target.value
-                                            }))
-                                        }
-                                        className="input-field"
-                                    />
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        onClick={handleSearch}
-                                        disabled={isSearching}
-                                        className="btn-primary flex-1"
-                                    >
-                                        {isSearching ? 'Đang tìm...' : 'Tìm kiếm'}
-                                    </Button>
-                                    <Button
-                                        onClick={handleClearSearch}
-                                        variant="outline"
-                                        disabled={isSearching}
-                                        className="flex-1"
-                                    >
-                                        Xóa bộ lọc
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Create Form */}
-                    {showCreateForm && (
-                        <Card className="bg-surface border-surface">
-                            <CardHeader>
-                                <CardTitle className="text-primary">
-                                    Tạo Tài Khoản Admin Mới
-                                </CardTitle>
-                                <CardDescription className="text-secondary">
-                                    Nhập thông tin để tạo tài khoản admin mới
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        {/* Email */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Email *
-                                            </label>
-                                            <Input
-                                                type="email"
-                                                placeholder="admin@example.com"
-                                                value={formData.email}
-                                                onChange={(e) =>
-                                                    handleInputChange('email', e.target.value)
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    formErrors.email ? 'border-red-500' : ''
-                                                }`}
-                                            />
-                                            {formErrors.email && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {formErrors.email}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Password */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Mật khẩu *
-                                            </label>
-                                            <Input
-                                                type="password"
-                                                placeholder="Nhập mật khẩu..."
-                                                value={formData.password}
-                                                onChange={(e) =>
-                                                    handleInputChange('password', e.target.value)
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    formErrors.password ? 'border-red-500' : ''
-                                                }`}
-                                            />
-                                            {formErrors.password && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {formErrors.password}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Full Name */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Họ tên *
-                                            </label>
-                                            <Input
-                                                type="text"
-                                                placeholder="Nhập họ tên..."
-                                                value={formData.fullName}
-                                                onChange={(e) =>
-                                                    handleInputChange('fullName', e.target.value)
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    formErrors.fullName ? 'border-red-500' : ''
-                                                }`}
-                                            />
-                                            {formErrors.fullName && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {formErrors.fullName}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {/* Phone */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Số điện thoại *
-                                            </label>
-                                            <Input
-                                                type="tel"
-                                                placeholder="0123456789"
-                                                value={formData.phoneNumber}
-                                                onChange={(e) =>
-                                                    handleInputChange('phoneNumber', e.target.value)
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    formErrors.phoneNumber ? 'border-red-500' : ''
-                                                }`}
-                                            />
-                                            {formErrors.phoneNumber && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {formErrors.phoneNumber}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Branch */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Chi nhánh *
-                                            </label>
-                                            <Select
-                                                value={formData.branchId}
-                                                onValueChange={(value) =>
-                                                    handleInputChange('branchId', value)
-                                                }
-                                            >
-                                                <SelectTrigger
-                                                    className={`w-full bg-brand border-surface text-primary hover:bg-[#1f2937] transition-colors ${
-                                                        formErrors.branchId ? 'border-red-500' : ''
-                                                    }`}
-                                                >
-                                                    <SelectValue placeholder="-- Chọn chi nhánh --" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-surface border-surface">
-                                                    {branches.map((branch) => (
-                                                        <SelectItem
-                                                            key={branch.id}
-                                                            value={branch.id}
-                                                            className="hover:bg-brand focus:bg-brand"
-                                                        >
-                                                            <div>
-                                                                <div className="font-medium text-primary">
-                                                                    {branch.name}
-                                                                </div>
-                                                                <div className="text-xs text-secondary">
-                                                                    {branch.address}
-                                                                </div>
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {formErrors.branchId && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {formErrors.branchId}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Form Actions */}
-                                <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-surface">
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleCancelCreate}
-                                        disabled={isCreating}
-                                        className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                    >
-                                        Hủy
-                                    </Button>
-                                    <Button
-                                        onClick={handleCreateAdminAccount}
-                                        disabled={isCreating}
-                                        className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                    >
-                                        {isCreating ? 'Đang tạo...' : 'Tạo Admin'}
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Edit Form */}
-                    {showEditForm && editingAccount && (
-                        <Card className="bg-surface border-surface">
-                            <CardHeader>
-                                <CardTitle className="text-primary">
-                                    Chỉnh sửa Tài Khoản Admin
-                                </CardTitle>
-                                <CardDescription className="text-secondary">
-                                    Cập nhật thông tin tài khoản: {editingAccount.fullName}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-4">
-                                        {/* Email */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Email *
-                                            </label>
-                                            <Input
-                                                type="email"
-                                                placeholder="admin@example.com"
-                                                value={editFormData.email}
-                                                onChange={(e) =>
-                                                    handleEditInputChange('email', e.target.value)
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    editFormErrors.email ? 'border-red-500' : ''
-                                                }`}
-                                            />
-                                            {editFormErrors.email && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {editFormErrors.email}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Password */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Mật khẩu mới (để trống nếu không thay đổi)
-                                            </label>
-                                            <Input
-                                                type="password"
-                                                placeholder="Nhập mật khẩu mới..."
-                                                value={editFormData.password}
-                                                onChange={(e) =>
-                                                    handleEditInputChange(
-                                                        'password',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    editFormErrors.password ? 'border-red-500' : ''
-                                                }`}
-                                            />
-                                            {editFormErrors.password && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {editFormErrors.password}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Full Name */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Họ tên *
-                                            </label>
-                                            <Input
-                                                type="text"
-                                                placeholder="Nhập họ tên..."
-                                                value={editFormData.fullName}
-                                                onChange={(e) =>
-                                                    handleEditInputChange(
-                                                        'fullName',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    editFormErrors.fullName ? 'border-red-500' : ''
-                                                }`}
-                                            />
-                                            {editFormErrors.fullName && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {editFormErrors.fullName}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Phone */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Số điện thoại *
-                                            </label>
-                                            <Input
-                                                type="tel"
-                                                placeholder="0123456789"
-                                                value={editFormData.phoneNumber}
-                                                onChange={(e) =>
-                                                    handleEditInputChange(
-                                                        'phoneNumber',
-                                                        e.target.value
-                                                    )
-                                                }
-                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                    editFormErrors.phoneNumber
-                                                        ? 'border-red-500'
-                                                        : ''
-                                                }`}
-                                            />
-                                            {editFormErrors.phoneNumber && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {editFormErrors.phoneNumber}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {/* Branch */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Chi nhánh *
-                                            </label>
-                                            <Select
-                                                value={editFormData.branchId}
-                                                onValueChange={(value) =>
-                                                    handleEditInputChange('branchId', value)
-                                                }
-                                            >
-                                                <SelectTrigger
-                                                    className={`w-full bg-brand border-surface text-primary hover:bg-[#1f2937] transition-colors ${
-                                                        editFormErrors.branchId
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }`}
-                                                >
-                                                    <SelectValue placeholder="-- Chọn chi nhánh --" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-surface border-surface">
-                                                    {branches.map((branch) => (
-                                                        <SelectItem
-                                                            key={branch.id}
-                                                            value={branch.id}
-                                                            className="hover:bg-brand focus:bg-brand"
-                                                        >
-                                                            <div>
-                                                                <div className="font-medium text-primary">
-                                                                    {branch.name}
-                                                                </div>
-                                                                <div className="text-xs text-secondary">
-                                                                    {branch.address}
-                                                                </div>
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {editFormErrors.branchId && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {editFormErrors.branchId}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        {/* Status */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Trạng thái *
-                                            </label>
-                                            <Select
-                                                value={editFormData.status}
-                                                onValueChange={(value: AccountStatus) =>
-                                                    handleEditInputChange('status', value)
-                                                }
-                                            >
-                                                <SelectTrigger className="w-full bg-brand border-surface text-primary hover:bg-[#1f2937] transition-colors">
-                                                    <SelectValue placeholder="-- Chọn trạng thái --" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-surface border-surface">
-                                                    <SelectItem
-                                                        value={AccountStatus.ACTIVE}
-                                                        className="hover:bg-brand focus:bg-brand"
-                                                    >
-                                                        <div className="font-medium text-primary">
-                                                            Hoạt động
-                                                        </div>
-                                                    </SelectItem>
-                                                    <SelectItem
-                                                        value={AccountStatus.DELETED}
-                                                        className="hover:bg-brand focus:bg-brand"
-                                                    >
-                                                        <div className="font-medium text-primary">
-                                                            Đã xóa
-                                                        </div>
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        {/* Roles */}
-                                        <div>
-                                            <label className="text-sm font-medium text-primary block mb-2">
-                                                Roles *
-                                            </label>
-                                            <div className="space-y-2 max-h-32 overflow-y-auto border border-surface rounded-md p-3 bg-brand">
-                                                {roles.map((role) => {
-                                                    const isChecked = editFormData.roleIds.includes(
-                                                        role.roleId
-                                                    )
-                                                    console.log(
-                                                        `Role ${role.roleName} (${role.roleId}):`,
-                                                        isChecked,
-                                                        'Current roleIds:',
-                                                        editFormData.roleIds
-                                                    )
-
-                                                    return (
-                                                        <div
-                                                            key={role.roleId}
-                                                            className="flex items-center space-x-2"
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                id={`edit-role-${role.roleId}`}
-                                                                checked={isChecked}
-                                                                onChange={(e) => {
-                                                                    const newRoleIds = e.target
-                                                                        .checked
-                                                                        ? [
-                                                                              ...editFormData.roleIds,
-                                                                              role.roleId
-                                                                          ]
-                                                                        : editFormData.roleIds.filter(
-                                                                              (id: string) =>
-                                                                                  id !== role.roleId
-                                                                          )
-                                                                    handleEditInputChange(
-                                                                        'roleIds',
-                                                                        newRoleIds
-                                                                    )
-                                                                }}
-                                                                className="text-primary"
-                                                            />
-                                                            <label
-                                                                htmlFor={`edit-role-${role.roleId}`}
-                                                                className="text-sm text-primary cursor-pointer"
-                                                            >
-                                                                {role.roleName}
-                                                            </label>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                            {editFormErrors.roleIds && (
-                                                <p className="text-red-500 text-sm mt-1">
-                                                    {editFormErrors.roleIds}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Form Actions */}
-                                <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-surface">
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleCancelEdit}
-                                        disabled={isUpdating}
-                                        className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                    >
-                                        Hủy
-                                    </Button>
-                                    <Button
-                                        onClick={handleUpdateAdminAccount}
-                                        disabled={isUpdating}
-                                        className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                    >
-                                        {isUpdating ? 'Đang cập nhật...' : 'Cập nhật'}
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Admin Accounts List */}
-                    <Card className="bg-surface border-surface">
-                        <CardHeader>
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <CardTitle className="text-primary">
-                                        Quản lý Tài khoản Admin
-                                    </CardTitle>
-                                    <CardDescription className="text-secondary">
-                                        Xem và quản lý tất cả tài khoản admin trong hệ thống
-                                    </CardDescription>
-                                </div>
-                            </div>
-
-                            {/* Tab Navigation */}
-                            <div className="flex space-x-2">
-                                <button
-                                    onClick={() => setActiveTab('all')}
-                                    className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
-                                        activeTab === 'all'
-                                            ? 'bg-orange-200/70 text-orange-800 shadow-sm'
-                                            : 'bg-orange-50/20 text-orange-600 hover:text-orange-700 hover:bg-orange-50/40'
-                                    }`}
-                                >
-                                    Tất cả Admin ({adminAccounts.length})
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('search')}
-                                    className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
-                                        activeTab === 'search'
-                                            ? 'bg-orange-200/70 text-orange-800 shadow-sm'
-                                            : 'bg-orange-50/20 text-orange-600 hover:text-orange-700 hover:bg-orange-50/40'
-                                    }`}
-                                >
-                                    Kết quả tìm kiếm ({searchResults.length})
-                                </button>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            {loading ? (
-                                <div className="text-center py-8">
-                                    <div className="text-secondary">Đang tải...</div>
-                                </div>
-                            ) : (activeTab === 'all' ? adminAccounts : searchResults).length ===
-                              0 ? (
-                                <div className="text-center py-8">
-                                    <div className="w-16 h-16 bg-brand border border-surface rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg
-                                            className="w-8 h-8 text-secondary"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-lg font-medium text-primary mb-2">
-                                        {activeTab === 'all'
-                                            ? 'Chưa có tài khoản admin nào'
-                                            : 'Không tìm thấy kết quả'}
-                                    </h3>
-                                    <p className="text-secondary">
-                                        {activeTab === 'all'
-                                            ? 'Nhấn "Tạo Admin Mới" để tạo tài khoản admin đầu tiên'
-                                            : 'Thử thay đổi tiêu chí tìm kiếm hoặc xóa bộ lọc để xem tất cả tài khoản'}
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {(activeTab === 'all' ? adminAccounts : searchResults).map(
-                                        (account) => {
-                                            const branchName =
-                                                branches.find((b) => b.id === account.branchId)
-                                                    ?.name || 'Không xác định'
-
-                                            return (
-                                                <div
-                                                    key={account.id}
-                                                    className="p-4 bg-brand border border-surface rounded-lg hover:shadow-lg transition-shadow"
-                                                >
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center space-x-3 mb-3">
-                                                                <h3 className="font-semibold text-primary">
-                                                                    {account.fullName}
-                                                                </h3>
-                                                                <span
-                                                                    className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${
-                                                                        account.status ===
-                                                                        AccountStatus.ACTIVE
-                                                                            ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-                                                                            : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                                                    }`}
-                                                                >
-                                                                    {account.status ===
-                                                                    AccountStatus.ACTIVE
-                                                                        ? 'Hoạt động'
-                                                                        : 'Đã xóa'}
-                                                                </span>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {account.roleNames &&
-                                                                    account.roleNames.length > 0 ? (
-                                                                        account.roleNames.map(
-                                                                            (role, index) => (
-                                                                                <span
-                                                                                    key={`${account.id}-role-${index}`}
-                                                                                    className="px-3 py-1 text-xs font-medium rounded-md bg-brand-primary/10 text-brand-primary border border-brand-primary/20 hover:bg-brand-primary/15 transition-colors"
-                                                                                >
-                                                                                    {role}
-                                                                                </span>
-                                                                            )
-                                                                        )
-                                                                    ) : (
-                                                                        <span className="px-3 py-1 text-xs font-medium rounded-md bg-surface/50 text-secondary border border-surface">
-                                                                            Không có role
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                                                <div className="text-secondary">
-                                                                    <span className="font-medium">
-                                                                        Email:
-                                                                    </span>{' '}
-                                                                    {account.email}
-                                                                </div>
-                                                                <div className="text-secondary">
-                                                                    <span className="font-medium">
-                                                                        SĐT:
-                                                                    </span>{' '}
-                                                                    {account.phoneNumber}
-                                                                </div>
-                                                                <div className="text-secondary">
-                                                                    <span className="font-medium">
-                                                                        Chi nhánh:
-                                                                    </span>{' '}
-                                                                    {branchName}
-                                                                </div>
-                                                                <div className="text-secondary">
-                                                                    <span className="font-medium">
-                                                                        Tạo lúc:
-                                                                    </span>{' '}
-                                                                    {formatDate(account.createdAt)}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="ml-4">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() =>
-                                                                    handleEditAccount(account)
-                                                                }
-                                                                className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                                            >
-                                                                Chỉnh sửa
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        }
+                                    {formErrors.email && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {formErrors.email}
+                                        </p>
                                     )}
                                 </div>
-                            )}
 
-                            {/* Pagination */}
-                            <PaginationComponent
-                                currentPage={activeTab === 'all' ? currentPage : searchCurrentPage}
-                                totalPages={activeTab === 'all' ? totalPages : searchTotalPages}
-                                onPageChange={
-                                    activeTab === 'all' ? handlePageChange : handleSearchPageChange
+                                {/* Password */}
+                                <div>
+                                    <label className="text-sm font-medium text-primary block mb-2">
+                                        Password *
+                                    </label>
+                                    <Input
+                                        type="password"
+                                        placeholder="Enter password..."
+                                        value={formData.password}
+                                        onChange={(e) =>
+                                            handleInputChange('password', e.target.value)
+                                        }
+                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                            formErrors.password ? 'border-red-500' : ''
+                                        }`}
+                                    />
+                                    {formErrors.password && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {formErrors.password}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Full Name */}
+                                <div>
+                                    <label className="text-sm font-medium text-primary block mb-2">
+                                        Full Name *
+                                    </label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Enter full name..."
+                                        value={formData.fullName}
+                                        onChange={(e) =>
+                                            handleInputChange('fullName', e.target.value)
+                                        }
+                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                            formErrors.fullName ? 'border-red-500' : ''
+                                        }`}
+                                    />
+                                    {formErrors.fullName && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {formErrors.fullName}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {/* Phone */}
+                                <div>
+                                    <label className="text-sm font-medium text-primary block mb-2">
+                                        Phone Number *
+                                    </label>
+                                    <Input
+                                        type="tel"
+                                        placeholder="0123456789"
+                                        value={formData.phoneNumber}
+                                        onChange={(e) =>
+                                            handleInputChange('phoneNumber', e.target.value)
+                                        }
+                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                            formErrors.phoneNumber ? 'border-red-500' : ''
+                                        }`}
+                                    />
+                                    {formErrors.phoneNumber && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {formErrors.phoneNumber}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Branch */}
+                                <div>
+                                    <label className="text-sm font-medium text-primary block mb-2">
+                                        Branch *
+                                    </label>
+                                    <Select
+                                        value={formData.branchId}
+                                        onValueChange={(value) =>
+                                            handleInputChange('branchId', value)
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            className={`w-full bg-brand border-surface text-primary hover:bg-[#1f2937] transition-colors ${
+                                                formErrors.branchId ? 'border-red-500' : ''
+                                            }`}
+                                        >
+                                            <SelectValue placeholder="-- Select branch --" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-surface border-surface">
+                                            {branches.map((branch) => (
+                                                <SelectItem
+                                                    key={branch.id}
+                                                    value={branch.id}
+                                                    className="hover:bg-brand focus:bg-brand"
+                                                >
+                                                    <div>
+                                                        <div className="font-medium text-primary">
+                                                            {branch.name}
+                                                        </div>
+                                                        <div className="text-xs text-secondary">
+                                                            {branch.address}
+                                                        </div>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {formErrors.branchId && (
+                                        <p className="text-red-500 text-sm mt-1">
+                                            {formErrors.branchId}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Form Actions */}
+                        <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-surface">
+                            <Button
+                                variant="outline"
+                                onClick={handleCancelCreate}
+                                disabled={isCreating}
+                                className="border-surface text-secondary hover:bg-brand hover:text-primary"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleCreateAdminAccount}
+                                disabled={isCreating}
+                                className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
+                            >
+                                {isCreating ? 'Creating...' : 'Create Admin'}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Admin Accounts List - Table with Inline Editing */}
+            <Card className="bg-surface border-surface">
+                <CardHeader>
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <CardTitle className="text-primary">Admin Account Management</CardTitle>
+                            <CardDescription className="text-secondary">
+                                View and manage all admin accounts in the system
+                            </CardDescription>
+                        </div>
+                    </div>
+
+                    {/* Tab Navigation */}
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => setActiveTab('all')}
+                            className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
+                                activeTab === 'all'
+                                    ? 'bg-orange-200/70 text-orange-800 shadow-sm'
+                                    : 'bg-orange-50/20 text-orange-600 hover:text-orange-700 hover:bg-orange-50/40'
+                            }`}
+                        >
+                            All Admins ({adminAccounts.length})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('search')}
+                            className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-md transition-all duration-200 ${
+                                activeTab === 'search'
+                                    ? 'bg-orange-200/70 text-orange-800 shadow-sm'
+                                    : 'bg-orange-50/20 text-orange-600 hover:text-orange-700 hover:bg-orange-50/40'
+                            }`}
+                        >
+                            Search Results ({searchResults.length})
+                        </button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <div className="text-center py-8">
+                            <div className="text-secondary">Loading...</div>
+                        </div>
+                    ) : (activeTab === 'all' ? adminAccounts : searchResults).length === 0 ? (
+                        <div className="text-center py-8">
+                            <div className="w-16 h-16 bg-brand border border-surface rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg
+                                    className="w-8 h-8 text-secondary"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                                    />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-medium text-primary mb-2">
+                                {activeTab === 'all' ? 'No admin accounts yet' : 'No results found'}
+                            </h3>
+                            <p className="text-secondary">
+                                {activeTab === 'all'
+                                    ? 'Click "Create New Admin" to create the first admin account'
+                                    : 'Try changing search criteria or clear filter to see all accounts'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {(activeTab === 'all' ? adminAccounts : searchResults).map(
+                                (account) => {
+                                    const branchName =
+                                        branches.find((b) => b.id === account.branchId)?.name ||
+                                        'Unknown'
+                                    const isEditing = editingAccount?.id === account.id
+
+                                    return (
+                                        <div
+                                            key={account.id}
+                                            className="border border-surface rounded-lg overflow-hidden"
+                                        >
+                                            {/* Account Row */}
+                                            <div
+                                                className={`p-4 bg-brand transition-colors ${isEditing ? 'bg-orange-50/5' : 'hover:bg-surface/50'}`}
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center space-x-3 mb-3">
+                                                            <h3 className="font-semibold text-primary">
+                                                                {account.fullName}
+                                                            </h3>
+                                                            <span
+                                                                className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${
+                                                                    account.status ===
+                                                                    AccountStatus.ACTIVE
+                                                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                                                        : 'bg-red-50 text-red-700 border-red-200'
+                                                                }`}
+                                                            >
+                                                                {account.status ===
+                                                                AccountStatus.ACTIVE
+                                                                    ? 'Active'
+                                                                    : 'Deleted'}
+                                                            </span>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {account.roleNames &&
+                                                                account.roleNames.length > 0 ? (
+                                                                    account.roleNames.map(
+                                                                        (role, index) => (
+                                                                            <span
+                                                                                key={`${account.id}-role-${index}`}
+                                                                                className="px-3 py-1 text-xs font-medium rounded-md bg-brand-primary/10 text-brand-primary border border-brand-primary/20"
+                                                                            >
+                                                                                {role}
+                                                                            </span>
+                                                                        )
+                                                                    )
+                                                                ) : (
+                                                                    <span className="px-3 py-1 text-xs font-medium rounded-md bg-surface/50 text-secondary border border-surface">
+                                                                        No role
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                                            <div className="text-secondary">
+                                                                <span className="font-medium">
+                                                                    Email:
+                                                                </span>{' '}
+                                                                {account.email}
+                                                            </div>
+                                                            <div className="text-secondary">
+                                                                <span className="font-medium">
+                                                                    Phone:
+                                                                </span>{' '}
+                                                                {account.phoneNumber}
+                                                            </div>
+                                                            <div className="text-secondary">
+                                                                <span className="font-medium">
+                                                                    Branch:
+                                                                </span>{' '}
+                                                                {branchName}
+                                                            </div>
+                                                            <div className="text-secondary">
+                                                                <span className="font-medium">
+                                                                    Created:
+                                                                </span>{' '}
+                                                                {formatDate(account.createdAt)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                if (isEditing) {
+                                                                    handleCancelEdit()
+                                                                } else {
+                                                                    handleEditAccount(account)
+                                                                }
+                                                            }}
+                                                            disabled={
+                                                                editingAccount !== null &&
+                                                                !isEditing
+                                                            }
+                                                            className="border-surface text-secondary hover:bg-brand hover:text-primary"
+                                                        >
+                                                            {isEditing ? 'Cancel' : 'Edit'}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Inline Edit Form - Expands below the row */}
+                                            {isEditing && (
+                                                <div className="p-6 bg-surface/30 border-t border-surface">
+                                                    <h4 className="text-sm font-semibold text-primary mb-4">
+                                                        Edit Account Information
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div className="space-y-4">
+                                                            {/* Email */}
+                                                            <div>
+                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                    Email *
+                                                                </label>
+                                                                <Input
+                                                                    type="email"
+                                                                    placeholder="admin@example.com"
+                                                                    value={editFormData.email}
+                                                                    onChange={(e) =>
+                                                                        handleEditInputChange(
+                                                                            'email',
+                                                                            e.target.value
+                                                                        )
+                                                                    }
+                                                                    className={`bg-brand border-surface text-primary ${
+                                                                        editFormErrors.email
+                                                                            ? 'border-red-500'
+                                                                            : ''
+                                                                    }`}
+                                                                    disabled={isUpdating}
+                                                                />
+                                                                {editFormErrors.email && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.email}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Full Name */}
+                                                            <div>
+                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                    Full Name *
+                                                                </label>
+                                                                <Input
+                                                                    type="text"
+                                                                    placeholder="Enter full name..."
+                                                                    value={editFormData.fullName}
+                                                                    onChange={(e) =>
+                                                                        handleEditInputChange(
+                                                                            'fullName',
+                                                                            e.target.value
+                                                                        )
+                                                                    }
+                                                                    className={`bg-brand border-surface text-primary ${
+                                                                        editFormErrors.fullName
+                                                                            ? 'border-red-500'
+                                                                            : ''
+                                                                    }`}
+                                                                    disabled={isUpdating}
+                                                                />
+                                                                {editFormErrors.fullName && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.fullName}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Phone */}
+                                                            <div>
+                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                    Phone Number *
+                                                                </label>
+                                                                <Input
+                                                                    type="tel"
+                                                                    placeholder="0123456789"
+                                                                    value={editFormData.phoneNumber}
+                                                                    onChange={(e) =>
+                                                                        handleEditInputChange(
+                                                                            'phoneNumber',
+                                                                            e.target.value
+                                                                        )
+                                                                    }
+                                                                    className={`bg-brand border-surface text-primary ${
+                                                                        editFormErrors.phoneNumber
+                                                                            ? 'border-red-500'
+                                                                            : ''
+                                                                    }`}
+                                                                    disabled={isUpdating}
+                                                                />
+                                                                {editFormErrors.phoneNumber && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.phoneNumber}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Password */}
+                                                            <div>
+                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                    New Password (leave blank if not
+                                                                    changing)
+                                                                </label>
+                                                                <Input
+                                                                    type="password"
+                                                                    placeholder="Enter new password..."
+                                                                    value={
+                                                                        editFormData.password || ''
+                                                                    }
+                                                                    onChange={(e) =>
+                                                                        handleEditInputChange(
+                                                                            'password',
+                                                                            e.target.value
+                                                                        )
+                                                                    }
+                                                                    className="bg-brand border-surface text-primary"
+                                                                    disabled={isUpdating}
+                                                                />
+                                                                <p className="text-xs text-secondary mt-1">
+                                                                    Leave blank to keep current
+                                                                    password
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="space-y-4">
+                                                            {/* Branch */}
+                                                            <div>
+                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                    Branch *
+                                                                </label>
+                                                                <Select
+                                                                    value={editFormData.branchId}
+                                                                    onValueChange={(value) =>
+                                                                        handleEditInputChange(
+                                                                            'branchId',
+                                                                            value
+                                                                        )
+                                                                    }
+                                                                    disabled={isUpdating}
+                                                                >
+                                                                    <SelectTrigger
+                                                                        className={`w-full bg-brand border-surface text-primary ${
+                                                                            editFormErrors.branchId
+                                                                                ? 'border-red-500'
+                                                                                : ''
+                                                                        }`}
+                                                                    >
+                                                                        <SelectValue placeholder="-- Select branch --" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent className="bg-surface border-surface">
+                                                                        {branches.map((branch) => (
+                                                                            <SelectItem
+                                                                                key={branch.id}
+                                                                                value={branch.id}
+                                                                                className="hover:bg-brand"
+                                                                            >
+                                                                                {branch.name}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                {editFormErrors.branchId && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.branchId}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Status */}
+                                                            <div>
+                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                    Status *
+                                                                </label>
+                                                                <Select
+                                                                    value={editFormData.status}
+                                                                    onValueChange={(
+                                                                        value: AccountStatus
+                                                                    ) =>
+                                                                        handleEditInputChange(
+                                                                            'status',
+                                                                            value
+                                                                        )
+                                                                    }
+                                                                    disabled={isUpdating}
+                                                                >
+                                                                    <SelectTrigger className="w-full bg-brand border-surface text-primary">
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent className="bg-surface border-surface">
+                                                                        <SelectItem
+                                                                            value={
+                                                                                AccountStatus.ACTIVE
+                                                                            }
+                                                                        >
+                                                                            Active
+                                                                        </SelectItem>
+                                                                        <SelectItem
+                                                                            value={
+                                                                                AccountStatus.DELETED
+                                                                            }
+                                                                        >
+                                                                            Deleted
+                                                                        </SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </div>
+
+                                                            {/* Roles */}
+                                                            <div>
+                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                    Roles *
+                                                                </label>
+                                                                <div className="space-y-2 max-h-24 overflow-y-auto border border-surface rounded-md p-3 bg-brand">
+                                                                    {roles.map((role) => (
+                                                                        <div
+                                                                            key={role.roleId}
+                                                                            className="flex items-center space-x-2"
+                                                                        >
+                                                                            <Checkbox
+                                                                                id={`edit-role-${role.roleId}`}
+                                                                                checked={editFormData.roleIds.includes(
+                                                                                    role.roleId
+                                                                                )}
+                                                                                onCheckedChange={(
+                                                                                    checked
+                                                                                ) => {
+                                                                                    const newRoleIds =
+                                                                                        checked
+                                                                                            ? [
+                                                                                                  ...editFormData.roleIds,
+                                                                                                  role.roleId
+                                                                                              ]
+                                                                                            : editFormData.roleIds.filter(
+                                                                                                  (
+                                                                                                      id
+                                                                                                  ) =>
+                                                                                                      id !==
+                                                                                                      role.roleId
+                                                                                              )
+                                                                                    handleEditInputChange(
+                                                                                        'roleIds',
+                                                                                        newRoleIds
+                                                                                    )
+                                                                                }}
+                                                                                disabled={
+                                                                                    isUpdating
+                                                                                }
+                                                                            />
+                                                                            <label
+                                                                                htmlFor={`edit-role-${role.roleId}`}
+                                                                                className="text-sm text-primary cursor-pointer"
+                                                                            >
+                                                                                {role.roleName}
+                                                                            </label>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                                {editFormErrors.roleIds && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.roleIds}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Form Actions */}
+                                                    <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-surface">
+                                                        <Button
+                                                            variant="outline"
+                                                            onClick={handleCancelEdit}
+                                                            disabled={isUpdating}
+                                                            className="border-surface text-secondary hover:bg-brand"
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            onClick={handleUpdateAdminAccount}
+                                                            disabled={isUpdating}
+                                                            className="btn-primary hover:bg-[#e86d28]"
+                                                        >
+                                                            {isUpdating ? 'Updating...' : 'Update'}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
                                 }
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    <PaginationComponent
+                        currentPage={activeTab === 'all' ? currentPage : searchCurrentPage}
+                        totalPages={activeTab === 'all' ? totalPages : searchTotalPages}
+                        onPageChange={
+                            activeTab === 'all' ? handlePageChange : handleSearchPageChange
+                        }
+                    />
+                </CardContent>
+            </Card>
         </div>
     )
 }

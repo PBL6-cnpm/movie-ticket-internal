@@ -1,7 +1,7 @@
 export interface UpdateAccountRequest {
     fullName: string
     email: string
-    password: string
+    password?: string // undefined means keep current password
     phoneNumber: string
     branchId: string
     status: AccountStatus
@@ -58,7 +58,7 @@ export interface AdminAccount {
 export interface UpdateAdminAccountRequest {
     fullName: string
     email: string
-    password: string
+    password?: string // undefined means keep current password
     phoneNumber: string
     branchId: string
     status: AccountStatus

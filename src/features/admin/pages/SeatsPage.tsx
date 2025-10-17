@@ -17,8 +17,10 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/shared/components/ui/select'
+import { showDeleteConfirm } from '@/shared/utils/confirm'
+import { showToast } from '@/shared/utils/toast'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Room } from '../types/room.type'
 import type { CreateSeatRequest, Seat, TypeSeat, UpdateSeatRequest } from '../types/seat.type'
 
@@ -36,7 +38,6 @@ const SeatsPage = () => {
 
     // Edit states
     const [editingSeat, setEditingSeat] = useState<Seat | null>(null)
-    const [showEditForm, setShowEditForm] = useState<boolean>(false)
     const [isUpdating, setIsUpdating] = useState<boolean>(false)
 
     // Selected seat state
@@ -85,6 +86,9 @@ const SeatsPage = () => {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
     const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({})
 
+    // Ref for dropdown
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
     // Fetch data on component mount
     useEffect(() => {
         const fetchData = async () => {
@@ -120,7 +124,7 @@ const SeatsPage = () => {
                 }
             } catch (error) {
                 console.error('Error fetching data:', error)
-                alert('Có lỗi xảy ra khi tải dữ liệu')
+                showToast.error('Có lỗi xảy ra khi tải dữ liệu')
             } finally {
                 setLoading(false)
             }
@@ -129,18 +133,47 @@ const SeatsPage = () => {
         fetchData()
     }, [roomId])
 
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node
+
+            // Check if click is inside dropdown
+            if (dropdownRef.current && dropdownRef.current.contains(target)) {
+                return
+            }
+
+            // Check if click is inside Select portal (SelectContent is rendered in a portal)
+            const selectPortal = document.querySelector('[data-radix-popper-content-wrapper]')
+            if (selectPortal && selectPortal.contains(target)) {
+                return
+            }
+
+            // Click is outside both dropdown and select portal, close dropdown
+            setSelectedSeat(null)
+        }
+
+        if (selectedSeat) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [selectedSeat])
+
     // Validate form
     const validateForm = (): boolean => {
         const errors: Record<string, string> = {}
 
         if (!formData.name.trim()) {
-            errors.name = 'Tên ghế là bắt buộc'
+            errors.name = 'Seat name is required'
         } else if (formData.name.trim().length < 2) {
-            errors.name = 'Tên ghế phải có ít nhất 2 ký tự'
+            errors.name = 'Seat name must be at least 2 characters'
         }
 
         if (!formData.typeSeatId) {
-            errors.typeSeatId = 'Vui lòng chọn loại ghế'
+            errors.typeSeatId = 'Please select a seat type'
         }
 
         setFormErrors(errors)
@@ -152,13 +185,13 @@ const SeatsPage = () => {
         const errors: Record<string, string> = {}
 
         if (!editFormData.name.trim()) {
-            errors.name = 'Tên ghế là bắt buộc'
+            errors.name = 'Seat name is required'
         } else if (editFormData.name.trim().length < 2) {
-            errors.name = 'Tên ghế phải có ít nhất 2 ký tự'
+            errors.name = 'Seat name must be at least 2 characters'
         }
 
         if (!editFormData.typeSeatId) {
-            errors.typeSeatId = 'Vui lòng chọn loại ghế'
+            errors.typeSeatId = 'Please select a seat type'
         }
 
         setEditFormErrors(errors)
@@ -218,15 +251,16 @@ const SeatsPage = () => {
                 })
                 setShowCreateForm(false)
 
-                alert(`Ghế "${response.data.name}" đã được tạo thành công!`)
+                showToast.success(`Seat "${response.data.name}" has been created successfully!`)
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi tạo ghế')
+                showToast.error(response.message || 'An error occurred while creating the seat')
             }
         } catch (error: unknown) {
             console.error('Error creating seat:', error)
             const apiError = error as { response?: { data?: { message?: string } } }
-            const errorMessage = apiError.response?.data?.message || 'Có lỗi xảy ra khi tạo ghế'
-            alert(errorMessage)
+            const errorMessage =
+                apiError.response?.data?.message || 'An error occurred while creating the seat'
+            showToast.error(errorMessage)
         } finally {
             setIsCreating(false)
         }
@@ -240,8 +274,7 @@ const SeatsPage = () => {
             typeSeatId: seat.typeSeat.id
         })
         setEditFormErrors({})
-        setShowEditForm(true)
-        setShowCreateForm(false)
+        // Edit form will show inline in the dropdown
     }
 
     // Handle update seat
@@ -259,20 +292,19 @@ const SeatsPage = () => {
                     prev.map((seat) => (seat.id === editingSeat.id ? response.data : seat))
                 )
 
-                setShowEditForm(false)
                 setEditingSeat(null)
-                setSelectedSeat(null) // Close selected seat panel
+                setSelectedSeat(null) // Close dropdown
 
-                alert(`Ghế "${response.data.name}" đã được cập nhật thành công!`)
+                showToast.success(`Seat "${response.data.name}" has been updated successfully!`)
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi cập nhật ghế')
+                showToast.error(response.message || 'An error occurred while updating the seat')
             }
         } catch (error: unknown) {
             console.error('Error updating seat:', error)
             const apiError = error as { response?: { data?: { message?: string } } }
             const errorMessage =
-                apiError.response?.data?.message || 'Có lỗi xảy ra khi cập nhật ghế'
-            alert(errorMessage)
+                apiError.response?.data?.message || 'An error occurred while updating the seat'
+            showToast.error(errorMessage)
         } finally {
             setIsUpdating(false)
         }
@@ -280,31 +312,38 @@ const SeatsPage = () => {
 
     // Handle delete seat
     const handleDeleteSeat = async (seat: Seat) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa ghế "${seat.name}"?`)) {
-            return
-        }
+        showDeleteConfirm({
+            title: 'Delete Seat',
+            message: '',
+            itemName: seat.name,
+            onConfirm: async () => {
+                try {
+                    const response = await deleteSeat(seat.id)
 
-        try {
-            const response = await deleteSeat(seat.id)
+                    if (response.success) {
+                        setSeats((prev) => prev.filter((s) => s.id !== seat.id))
 
-            if (response.success) {
-                setSeats((prev) => prev.filter((s) => s.id !== seat.id))
+                        // Clear selected seat if the deleted seat was selected
+                        if (selectedSeat?.id === seat.id) {
+                            setSelectedSeat(null)
+                        }
 
-                // Clear selected seat if the deleted seat was selected
-                if (selectedSeat?.id === seat.id) {
-                    setSelectedSeat(null)
+                        showToast.success(`Seat "${seat.name}" has been deleted successfully!`)
+                    } else {
+                        showToast.error(
+                            response.message || 'An error occurred while deleting the seat'
+                        )
+                    }
+                } catch (error: unknown) {
+                    console.error('Error deleting seat:', error)
+                    const apiError = error as { response?: { data?: { message?: string } } }
+                    const errorMessage =
+                        apiError.response?.data?.message ||
+                        'An error occurred while deleting the seat'
+                    showToast.error(errorMessage)
                 }
-
-                alert(`Ghế "${seat.name}" đã được xóa thành công!`)
-            } else {
-                alert(response.message || 'Có lỗi xảy ra khi xóa ghế')
             }
-        } catch (error: unknown) {
-            console.error('Error deleting seat:', error)
-            const apiError = error as { response?: { data?: { message?: string } } }
-            const errorMessage = apiError.response?.data?.message || 'Có lỗi xảy ra khi xóa ghế'
-            alert(errorMessage)
-        }
+        })
     }
 
     // Handle cancel create form
@@ -325,32 +364,23 @@ const SeatsPage = () => {
             typeSeatId: ''
         })
         setEditFormErrors({})
-        setShowEditForm(false)
         setEditingSeat(null)
+        setSelectedSeat(null) // Also close the dropdown
     }
 
     // Handle open create form
     const handleOpenCreateForm = () => {
         // Close all other panels/forms
         setSelectedSeat(null)
-        setShowEditForm(false)
         setEditingSeat(null)
         setShowCreateForm(true)
     }
 
-    // Handle close selected seat
-    const handleCloseSelectedSeat = () => {
-        // Close selected seat and edit form
-        setSelectedSeat(null)
-        setShowEditForm(false)
-        setEditingSeat(null)
-    }
-
     // Handle select seat
     const handleSelectSeat = (seat: Seat) => {
-        // Close create form and edit form when selecting a seat
+        // Close create form and editing state when selecting a seat
         setShowCreateForm(false)
-        setShowEditForm(false)
+        setEditingSeat(null)
         setSelectedSeat(seat)
     }
 
@@ -367,22 +397,22 @@ const SeatsPage = () => {
                                     onClick={() => navigate({ to: '/admin/rooms' })}
                                     className="border-surface text-secondary hover:bg-brand hover:text-primary"
                                 >
-                                    ← Quay lại
+                                    ← Back
                                 </Button>
                                 <CardTitle className="text-primary">
-                                    Quản lý Ghế - {currentRoom?.name || 'Chọn phòng'}
+                                    Seat Management - {currentRoom?.name || 'Select room'}
                                 </CardTitle>
                             </div>
                             <CardDescription className="text-secondary">
-                                Quản lý các ghế trong phòng chiếu
+                                Manage seats in the screening room
                             </CardDescription>
                         </div>
                         <Button
                             onClick={handleOpenCreateForm}
                             className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                            disabled={showCreateForm || showEditForm || !roomId}
+                            disabled={showCreateForm || !roomId}
                         >
-                            Thêm Ghế Mới
+                            Add New Seat
                         </Button>
                     </div>
                 </CardHeader>
@@ -391,7 +421,7 @@ const SeatsPage = () => {
                 {typeSeats.length > 0 && (
                     <CardContent className="border-t border-surface pt-4 pb-2">
                         <div className="flex flex-wrap items-center gap-4">
-                            <span className="text-sm font-medium text-primary">Loại ghế:</span>
+                            <span className="text-sm font-medium text-primary">Seat Types:</span>
                             {typeSeats.map((typeSeat) => (
                                 <div key={typeSeat.id} className="flex items-center gap-2">
                                     <div
@@ -405,67 +435,23 @@ const SeatsPage = () => {
                     </CardContent>
                 )}
 
-                {/* Selected Seat Info */}
-                {selectedSeat && (
-                    <CardContent className="border-t border-surface pt-4 pb-4">
-                        <div className="bg-brand border border-surface rounded-lg p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h4 className="text-lg font-semibold text-primary">
-                                        Ghế {selectedSeat.name}
-                                    </h4>
-                                    <p className="text-secondary">
-                                        Loại: {selectedSeat.typeSeat.name}
-                                    </p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => handleEditSeat(selectedSeat)}
-                                        className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                        disabled={showCreateForm || showEditForm}
-                                    >
-                                        Sửa
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => handleDeleteSeat(selectedSeat)}
-                                        className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                        disabled={showCreateForm || showEditForm}
-                                    >
-                                        Xóa
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={handleCloseSelectedSeat}
-                                        className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                    >
-                                        Đóng
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                )}
+                {/* Selected Seat Info - Remove this section */}
 
                 {/* Create Form */}
                 {showCreateForm && (
                     <CardContent className="border-t border-surface pt-6">
                         <div className="space-y-4 max-w-md mx-auto border border-surface rounded-lg p-6 bg-brand">
                             <h3 className="text-lg font-semibold text-primary text-center">
-                                Thêm Ghế Mới
+                                Add New Seat
                             </h3>
                             <div className="space-y-4">
                                 <div>
                                     <label className="text-sm font-medium text-primary block mb-2">
-                                        Tên ghế *
+                                        Seat Name *
                                     </label>
                                     <Input
                                         type="text"
-                                        placeholder="VD: A1, B5..."
+                                        placeholder="e.g., A1, B5..."
                                         value={formData.name}
                                         onChange={(e) => handleInputChange('name', e.target.value)}
                                         className={`bg-brand border-surface text-primary placeholder:text-secondary ${
@@ -481,22 +467,22 @@ const SeatsPage = () => {
 
                                 <div>
                                     <label className="text-sm font-medium text-primary block mb-2">
-                                        Phòng
+                                        Room
                                     </label>
                                     <Input
                                         type="text"
-                                        value={currentRoom?.name || 'Đang tải...'}
+                                        value={currentRoom?.name || 'Loading...'}
                                         disabled
                                         className="bg-gray-100 border-surface text-gray-600 cursor-not-allowed"
                                     />
                                     <p className="text-xs text-secondary mt-1">
-                                        Ghế sẽ được tạo trong phòng này
+                                        Seat will be created in this room
                                     </p>
                                 </div>
 
                                 <div>
                                     <label className="text-sm font-medium text-primary block mb-2">
-                                        Loại ghế *
+                                        Seat Type *
                                     </label>
                                     <Select
                                         value={formData.typeSeatId}
@@ -509,7 +495,7 @@ const SeatsPage = () => {
                                                 formErrors.typeSeatId ? 'border-red-500' : ''
                                             }`}
                                         >
-                                            <SelectValue placeholder="-- Chọn loại ghế --" />
+                                            <SelectValue placeholder="-- Select Seat Type --" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-surface border-surface">
                                             {typeSeats.map((typeSeat) => (
@@ -539,103 +525,14 @@ const SeatsPage = () => {
                                     disabled={isCreating}
                                     className="border-surface text-secondary hover:bg-brand hover:text-primary"
                                 >
-                                    Hủy
+                                    Cancel
                                 </Button>
                                 <Button
                                     onClick={handleCreateSeat}
                                     disabled={isCreating}
                                     className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
                                 >
-                                    {isCreating ? 'Đang tạo...' : 'Tạo Ghế'}
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                )}
-
-                {/* Edit Form */}
-                {showEditForm && editingSeat && (
-                    <CardContent className="border-t border-surface pt-6">
-                        <div className="space-y-4 max-w-md mx-auto border border-surface rounded-lg p-6 bg-brand">
-                            <h3 className="text-lg font-semibold text-primary text-center">
-                                Chỉnh sửa ghế: {editingSeat.name}
-                            </h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-medium text-primary block mb-2">
-                                        Tên ghế *
-                                    </label>
-                                    <Input
-                                        type="text"
-                                        placeholder="VD: A1, B5..."
-                                        value={editFormData.name}
-                                        onChange={(e) =>
-                                            handleEditInputChange('name', e.target.value)
-                                        }
-                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                            editFormErrors.name ? 'border-red-500' : ''
-                                        }`}
-                                    />
-                                    {editFormErrors.name && (
-                                        <p className="text-red-500 text-sm mt-1">
-                                            {editFormErrors.name}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label className="text-sm font-medium text-primary block mb-2">
-                                        Loại ghế *
-                                    </label>
-                                    <Select
-                                        value={editFormData.typeSeatId}
-                                        onValueChange={(value) =>
-                                            handleEditInputChange('typeSeatId', value)
-                                        }
-                                    >
-                                        <SelectTrigger
-                                            className={`w-full bg-brand border-surface text-primary hover:bg-[#1f2937] transition-colors ${
-                                                editFormErrors.typeSeatId ? 'border-red-500' : ''
-                                            }`}
-                                        >
-                                            <SelectValue placeholder="-- Chọn loại ghế --" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-surface border-surface">
-                                            {typeSeats.map((typeSeat) => (
-                                                <SelectItem
-                                                    key={typeSeat.id}
-                                                    value={typeSeat.id}
-                                                    className="hover:bg-brand focus:bg-brand"
-                                                >
-                                                    <div className="font-medium text-primary">
-                                                        {typeSeat.name}
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {editFormErrors.typeSeatId && (
-                                        <p className="text-red-500 text-sm mt-1">
-                                            {editFormErrors.typeSeatId}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex space-x-3 justify-center">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleCancelEdit}
-                                    disabled={isUpdating}
-                                    className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                >
-                                    Hủy
-                                </Button>
-                                <Button
-                                    onClick={handleUpdateSeat}
-                                    disabled={isUpdating}
-                                    className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                >
-                                    {isUpdating ? 'Đang cập nhật...' : 'Cập nhật'}
+                                    {isCreating ? 'Creating...' : 'Create Seat'}
                                 </Button>
                             </div>
                         </div>
@@ -645,7 +542,7 @@ const SeatsPage = () => {
                 <CardContent>
                     {loading ? (
                         <div className="text-center py-8">
-                            <div className="text-secondary">Đang tải danh sách ghế...</div>
+                            <div className="text-secondary">Loading seat list...</div>
                         </div>
                     ) : !roomId ? (
                         <div className="text-center py-8">
@@ -665,10 +562,10 @@ const SeatsPage = () => {
                                 </svg>
                             </div>
                             <h3 className="text-lg font-medium text-primary mb-2">
-                                Chưa chọn phòng
+                                No room selected
                             </h3>
                             <p className="text-secondary">
-                                Vui lòng chọn phòng để xem danh sách ghế
+                                Please select a room to view the seat list
                             </p>
                         </div>
                     ) : seats.length === 0 ? (
@@ -688,17 +585,15 @@ const SeatsPage = () => {
                                     />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-medium text-primary mb-2">
-                                Chưa có ghế nào
-                            </h3>
+                            <h3 className="text-lg font-medium text-primary mb-2">No seats yet</h3>
                             <p className="text-secondary">
-                                Nhấn "Thêm Ghế Mới" để tạo ghế đầu tiên cho phòng này
+                                Click "Add New Seat" to create the first seat for this room
                             </p>
                         </div>
                     ) : (
                         <div className="space-y-6">
                             <h3 className="text-lg font-semibold text-primary">
-                                Danh sách ghế ({seats.length})
+                                Seat List ({seats.length})
                             </h3>
 
                             {(() => {
@@ -738,7 +633,10 @@ const SeatsPage = () => {
                                                     {rowSeats.map((seat) => (
                                                         <div
                                                             key={seat.id}
-                                                            className={`
+                                                            className="relative inline-block"
+                                                        >
+                                                            <div
+                                                                className={`
                                                                 w-12 h-12 rounded-lg border-2 cursor-pointer 
                                                                 flex items-center justify-center text-white font-bold text-sm
                                                                 transition-all duration-200 hover:scale-110 hover:shadow-lg
@@ -748,15 +646,216 @@ const SeatsPage = () => {
                                                                         : 'border-gray-400'
                                                                 }
                                                             `}
-                                                            style={{
-                                                                backgroundColor: getTypeSeatColor(
-                                                                    seat.typeSeat.id
-                                                                )
-                                                            }}
-                                                            onClick={() => handleSelectSeat(seat)}
-                                                            title={`${seat.name} - ${seat.typeSeat.name}`}
-                                                        >
-                                                            {seat.name}
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        getTypeSeatColor(
+                                                                            seat.typeSeat.id
+                                                                        )
+                                                                }}
+                                                                onClick={() =>
+                                                                    handleSelectSeat(seat)
+                                                                }
+                                                                title={`${seat.name} - ${seat.typeSeat.name}`}
+                                                            >
+                                                                {seat.name}
+                                                            </div>
+
+                                                            {/* Dropdown menu below the seat */}
+                                                            {selectedSeat?.id === seat.id && (
+                                                                <div
+                                                                    ref={dropdownRef}
+                                                                    className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-50 w-64"
+                                                                >
+                                                                    {/* Arrow pointing up */}
+                                                                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 border-b-[#e86d28]"></div>
+
+                                                                    <div className="bg-surface border-2 border-[#e86d28] rounded-lg shadow-xl p-3">
+                                                                        {/* Show edit form if editing this seat */}
+                                                                        {editingSeat?.id ===
+                                                                        seat.id ? (
+                                                                            <div className="space-y-3">
+                                                                                <div className="text-center pb-2 border-b border-border">
+                                                                                    <div className="font-semibold text-primary text-sm">
+                                                                                        Edit Seat
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                <div>
+                                                                                    <label className="text-xs font-medium text-primary block mb-1">
+                                                                                        Seat Name *
+                                                                                    </label>
+                                                                                    <Input
+                                                                                        type="text"
+                                                                                        placeholder="e.g., A1, B5..."
+                                                                                        value={
+                                                                                            editFormData.name
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            e
+                                                                                        ) =>
+                                                                                            handleEditInputChange(
+                                                                                                'name',
+                                                                                                e
+                                                                                                    .target
+                                                                                                    .value
+                                                                                            )
+                                                                                        }
+                                                                                        className={`bg-brand border-surface text-primary placeholder:text-secondary text-sm ${
+                                                                                            editFormErrors.name
+                                                                                                ? 'border-red-500'
+                                                                                                : ''
+                                                                                        }`}
+                                                                                    />
+                                                                                    {editFormErrors.name && (
+                                                                                        <p className="text-red-500 text-xs mt-1">
+                                                                                            {
+                                                                                                editFormErrors.name
+                                                                                            }
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                <div>
+                                                                                    <label className="text-xs font-medium text-primary block mb-1">
+                                                                                        Seat Type *
+                                                                                    </label>
+                                                                                    <Select
+                                                                                        value={
+                                                                                            editFormData.typeSeatId
+                                                                                        }
+                                                                                        onValueChange={(
+                                                                                            value
+                                                                                        ) =>
+                                                                                            handleEditInputChange(
+                                                                                                'typeSeatId',
+                                                                                                value
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        <SelectTrigger
+                                                                                            className={`w-full bg-brand border-surface text-primary hover:bg-[#1f2937] transition-colors text-sm ${
+                                                                                                editFormErrors.typeSeatId
+                                                                                                    ? 'border-red-500'
+                                                                                                    : ''
+                                                                                            }`}
+                                                                                        >
+                                                                                            <SelectValue placeholder="-- Select Type --" />
+                                                                                        </SelectTrigger>
+                                                                                        <SelectContent className="bg-surface border-surface">
+                                                                                            {typeSeats.map(
+                                                                                                (
+                                                                                                    typeSeat
+                                                                                                ) => (
+                                                                                                    <SelectItem
+                                                                                                        key={
+                                                                                                            typeSeat.id
+                                                                                                        }
+                                                                                                        value={
+                                                                                                            typeSeat.id
+                                                                                                        }
+                                                                                                        className="hover:bg-brand focus:bg-brand"
+                                                                                                    >
+                                                                                                        <div className="font-medium text-primary text-sm">
+                                                                                                            {
+                                                                                                                typeSeat.name
+                                                                                                            }
+                                                                                                        </div>
+                                                                                                    </SelectItem>
+                                                                                                )
+                                                                                            )}
+                                                                                        </SelectContent>
+                                                                                    </Select>
+                                                                                    {editFormErrors.typeSeatId && (
+                                                                                        <p className="text-red-500 text-xs mt-1">
+                                                                                            {
+                                                                                                editFormErrors.typeSeatId
+                                                                                            }
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                <div className="flex space-x-2 pt-1">
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        onClick={(
+                                                                                            e
+                                                                                        ) => {
+                                                                                            e.stopPropagation()
+                                                                                            handleCancelEdit()
+                                                                                        }}
+                                                                                        disabled={
+                                                                                            isUpdating
+                                                                                        }
+                                                                                        className="flex-1 bg-transparent border border-surface text-secondary hover:bg-brand hover:text-primary text-xs"
+                                                                                    >
+                                                                                        ✕
+                                                                                    </Button>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        onClick={(
+                                                                                            e
+                                                                                        ) => {
+                                                                                            e.stopPropagation()
+                                                                                            handleUpdateSeat()
+                                                                                        }}
+                                                                                        disabled={
+                                                                                            isUpdating
+                                                                                        }
+                                                                                        className="flex-1 bg-[#e86d28] hover:bg-[#d35f1a] text-white text-xs"
+                                                                                    >
+                                                                                        ✓
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="space-y-2">
+                                                                                <div className="text-center pb-2 border-b border-border">
+                                                                                    <div className="font-semibold text-primary text-sm">
+                                                                                        {seat.name}
+                                                                                    </div>
+                                                                                    <div className="text-xs text-secondary">
+                                                                                        {
+                                                                                            seat
+                                                                                                .typeSeat
+                                                                                                .name
+                                                                                        }
+                                                                                    </div>
+                                                                                </div>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.stopPropagation()
+                                                                                        handleEditSeat(
+                                                                                            seat
+                                                                                        )
+                                                                                    }}
+                                                                                    className="w-full border-surface text-secondary hover:bg-brand hover:text-primary"
+                                                                                >
+                                                                                    Edit
+                                                                                </Button>
+                                                                                <Button
+                                                                                    size="sm"
+                                                                                    variant="outline"
+                                                                                    onClick={(
+                                                                                        e
+                                                                                    ) => {
+                                                                                        e.stopPropagation()
+                                                                                        handleDeleteSeat(
+                                                                                            seat
+                                                                                        )
+                                                                                    }}
+                                                                                    className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                                                >
+                                                                                    Delete
+                                                                                </Button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     ))}
                                                 </div>
