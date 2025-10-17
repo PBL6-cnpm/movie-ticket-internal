@@ -8,6 +8,16 @@ import {
     CardTitle
 } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from '@/shared/components/ui/table'
+import { showDeleteConfirm } from '@/shared/utils/confirm'
+import { showToast } from '@/shared/utils/toast'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import type { CreateRoomRequest, Room, UpdateRoomRequest } from '../types/room.type'
@@ -21,7 +31,6 @@ const RoomsPage = () => {
 
     // Edit states
     const [editingRoom, setEditingRoom] = useState<Room | null>(null)
-    const [showEditForm, setShowEditForm] = useState<boolean>(false)
     const [isUpdating, setIsUpdating] = useState<boolean>(false)
 
     // Form states
@@ -49,11 +58,11 @@ const RoomsPage = () => {
                     setRooms(response.data)
                 } else {
                     console.error('Failed to fetch rooms:', response.message)
-                    alert(response.message || 'Có lỗi xảy ra khi tải danh sách phòng')
+                    showToast.error(response.message || 'An error occurred while loading room list')
                 }
             } catch (error) {
                 console.error('Error fetching rooms:', error)
-                alert('Có lỗi xảy ra khi tải danh sách phòng')
+                showToast.error('An error occurred while loading room list')
             } finally {
                 setLoading(false)
             }
@@ -67,9 +76,9 @@ const RoomsPage = () => {
         const errors: Record<string, string> = {}
 
         if (!formData.name.trim()) {
-            errors.name = 'Tên phòng là bắt buộc'
+            errors.name = 'Room name is required'
         } else if (formData.name.trim().length < 2) {
-            errors.name = 'Tên phòng phải có ít nhất 2 ký tự'
+            errors.name = 'Room name must be at least 2 characters'
         }
 
         setFormErrors(errors)
@@ -81,9 +90,9 @@ const RoomsPage = () => {
         const errors: Record<string, string> = {}
 
         if (!editFormData.name.trim()) {
-            errors.name = 'Tên phòng là bắt buộc'
+            errors.name = 'Room name is required'
         } else if (editFormData.name.trim().length < 2) {
-            errors.name = 'Tên phòng phải có ít nhất 2 ký tự'
+            errors.name = 'Room name must be at least 2 characters'
         }
 
         setEditFormErrors(errors)
@@ -139,15 +148,16 @@ const RoomsPage = () => {
                 setFormData({ name: '' })
                 setShowCreateForm(false)
 
-                alert(`Phòng "${response.data.name}" đã được tạo thành công!`)
+                showToast.success(`Room "${response.data.name}" has been created successfully!`)
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi tạo phòng')
+                showToast.error(response.message || 'An error occurred while creating room')
             }
         } catch (error: unknown) {
             console.error('Error creating room:', error)
             const apiError = error as { response?: { data?: { message?: string } } }
-            const errorMessage = apiError.response?.data?.message || 'Có lỗi xảy ra khi tạo phòng'
-            alert(errorMessage)
+            const errorMessage =
+                apiError.response?.data?.message || 'An error occurred while creating room'
+            showToast.error(errorMessage)
         } finally {
             setIsCreating(false)
         }
@@ -158,8 +168,13 @@ const RoomsPage = () => {
         setEditingRoom(room)
         setEditFormData({ name: room.name })
         setEditFormErrors({})
-        setShowEditForm(true)
-        setShowCreateForm(false)
+    }
+
+    // Handle cancel edit
+    const handleCancelEdit = () => {
+        setEditingRoom(null)
+        setEditFormData({ name: '' })
+        setEditFormErrors({})
     }
 
     // Handle update room
@@ -177,19 +192,18 @@ const RoomsPage = () => {
                     prev.map((room) => (room.id === editingRoom.id ? response.data : room))
                 )
 
-                setShowEditForm(false)
                 setEditingRoom(null)
 
-                alert(`Phòng "${response.data.name}" đã được cập nhật thành công!`)
+                showToast.success(`Room "${response.data.name}" has been updated successfully!`)
             } else {
-                alert(response.message || 'Có lỗi xảy ra khi cập nhật phòng')
+                showToast.error(response.message || 'An error occurred while updating room')
             }
         } catch (error: unknown) {
             console.error('Error updating room:', error)
             const apiError = error as { response?: { data?: { message?: string } } }
             const errorMessage =
-                apiError.response?.data?.message || 'Có lỗi xảy ra khi cập nhật phòng'
-            alert(errorMessage)
+                apiError.response?.data?.message || 'An error occurred while updating room'
+            showToast.error(errorMessage)
         } finally {
             setIsUpdating(false)
         }
@@ -197,25 +211,29 @@ const RoomsPage = () => {
 
     // Handle delete room
     const handleDeleteRoom = async (room: Room) => {
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa phòng "${room.name}"?`)) {
-            return
-        }
+        showDeleteConfirm({
+            title: 'Delete Room',
+            message: '',
+            itemName: room.name,
+            onConfirm: async () => {
+                try {
+                    const response = await deleteRoom(room.id)
 
-        try {
-            const response = await deleteRoom(room.id)
-
-            if (response.success) {
-                setRooms((prev) => prev.filter((r) => r.id !== room.id))
-                alert(`Phòng "${room.name}" đã được xóa thành công!`)
-            } else {
-                alert(response.message || 'Có lỗi xảy ra khi xóa phòng')
+                    if (response.success) {
+                        setRooms((prev) => prev.filter((r) => r.id !== room.id))
+                        showToast.success(`Room "${room.name}" has been deleted successfully!`)
+                    } else {
+                        showToast.error(response.message || 'An error occurred while deleting room')
+                    }
+                } catch (error: unknown) {
+                    console.error('Error deleting room:', error)
+                    const apiError = error as { response?: { data?: { message?: string } } }
+                    const errorMessage =
+                        apiError.response?.data?.message || 'An error occurred while deleting room'
+                    showToast.error(errorMessage)
+                }
             }
-        } catch (error: unknown) {
-            console.error('Error deleting room:', error)
-            const apiError = error as { response?: { data?: { message?: string } } }
-            const errorMessage = apiError.response?.data?.message || 'Có lỗi xảy ra khi xóa phòng'
-            alert(errorMessage)
-        }
+        })
     }
 
     // Handle cancel create form
@@ -225,133 +243,33 @@ const RoomsPage = () => {
         setShowCreateForm(false)
     }
 
-    // Handle cancel edit
-    const handleCancelEdit = () => {
-        setEditFormData({ name: '' })
-        setEditFormErrors({})
-        setShowEditForm(false)
-        setEditingRoom(null)
-    }
-
     return (
         <div className="mt-6">
-            <Card className="bg-surface border-surface">
+            <Card className="border-0 shadow-none">
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="text-primary">Quản lý Phòng Chiếu</CardTitle>
+                            <CardTitle className="text-primary">Room Management</CardTitle>
                             <CardDescription className="text-secondary">
-                                Quản lý các phòng chiếu trong chi nhánh của bạn
+                                Manage rooms in your branch
                             </CardDescription>
                         </div>
                         <Button
                             onClick={() => setShowCreateForm(true)}
                             className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                            disabled={showCreateForm || showEditForm}
+                            disabled={showCreateForm || editingRoom !== null}
                         >
-                            Thêm Phòng Mới
+                            Add New Room
                         </Button>
                     </div>
                 </CardHeader>
 
-                {/* Create Form */}
-                {showCreateForm && (
-                    <CardContent className="border-t border-surface pt-6">
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">
-                                Thêm Phòng Chiếu Mới
-                            </h3>
-                            <div className="max-w-md">
-                                <label className="text-sm font-medium text-primary block mb-2">
-                                    Tên phòng *
-                                </label>
-                                <Input
-                                    type="text"
-                                    placeholder="Nhập tên phòng..."
-                                    value={formData.name}
-                                    onChange={(e) => handleInputChange('name', e.target.value)}
-                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                        formErrors.name ? 'border-red-500' : ''
-                                    }`}
-                                />
-                                {formErrors.name && (
-                                    <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
-                                )}
-                            </div>
-                            <div className="flex space-x-3">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleCancelCreate}
-                                    disabled={isCreating}
-                                    className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                >
-                                    Hủy
-                                </Button>
-                                <Button
-                                    onClick={handleCreateRoom}
-                                    disabled={isCreating}
-                                    className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                >
-                                    {isCreating ? 'Đang tạo...' : 'Tạo Phòng'}
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                )}
-
-                {/* Edit Form */}
-                {showEditForm && editingRoom && (
-                    <CardContent className="border-t border-surface pt-6">
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-primary">
-                                Chỉnh sửa phòng: {editingRoom.name}
-                            </h3>
-                            <div className="max-w-md">
-                                <label className="text-sm font-medium text-primary block mb-2">
-                                    Tên phòng *
-                                </label>
-                                <Input
-                                    type="text"
-                                    placeholder="Nhập tên phòng..."
-                                    value={editFormData.name}
-                                    onChange={(e) => handleEditInputChange('name', e.target.value)}
-                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                        editFormErrors.name ? 'border-red-500' : ''
-                                    }`}
-                                />
-                                {editFormErrors.name && (
-                                    <p className="text-red-500 text-sm mt-1">
-                                        {editFormErrors.name}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="flex space-x-3">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleCancelEdit}
-                                    disabled={isUpdating}
-                                    className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                >
-                                    Hủy
-                                </Button>
-                                <Button
-                                    onClick={handleUpdateRoom}
-                                    disabled={isUpdating}
-                                    className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                >
-                                    {isUpdating ? 'Đang cập nhật...' : 'Cập nhật'}
-                                </Button>
-                            </div>
-                        </div>
-                    </CardContent>
-                )}
-
                 <CardContent>
                     {loading ? (
                         <div className="text-center py-8">
-                            <div className="text-secondary">Đang tải danh sách phòng...</div>
+                            <div className="text-secondary">Loading room list...</div>
                         </div>
-                    ) : rooms.length === 0 ? (
+                    ) : rooms.length === 0 && !showCreateForm ? (
                         <div className="text-center py-8">
                             <div className="w-16 h-16 bg-brand border border-surface rounded-full flex items-center justify-center mx-auto mb-4">
                                 <svg
@@ -368,66 +286,179 @@ const RoomsPage = () => {
                                     />
                                 </svg>
                             </div>
-                            <h3 className="text-lg font-medium text-primary mb-2">
-                                Chưa có phòng chiếu nào
-                            </h3>
+                            <h3 className="text-lg font-medium text-primary mb-2">No rooms yet</h3>
                             <p className="text-secondary">
-                                Nhấn "Thêm Phòng Mới" để tạo phòng chiếu đầu tiên
+                                Click "Add New Room" to create your first room
                             </p>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold text-primary">
-                                Danh sách phòng chiếu ({rooms.length})
+                                Room list ({rooms.length})
                             </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {rooms.map((room) => (
-                                    <Card key={room.id} className="bg-brand border-surface">
-                                        <CardContent className="p-4">
-                                            <div className="space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <h4 className="font-semibold text-primary text-lg">
-                                                        {room.name}
-                                                    </h4>
-                                                </div>
+                            <div className="rounded-md border border-surface bg-brand overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[60px]">No.</TableHead>
+                                            <TableHead>Room name</TableHead>
+                                            <TableHead className="text-center w-[300px]">
+                                                Actions
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {/* Create Row - Show at top when creating */}
+                                        {showCreateForm && (
+                                            <TableRow>
+                                                <TableCell className="font-medium text-primary">
+                                                    New
+                                                </TableCell>
+                                                <TableCell className="font-semibold text-primary">
+                                                    <div className="flex items-center gap-2">
+                                                        <Input
+                                                            type="text"
+                                                            placeholder="Enter room name..."
+                                                            value={formData.name}
+                                                            onChange={(e) =>
+                                                                handleInputChange(
+                                                                    'name',
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                            className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                                formErrors.name
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                            }`}
+                                                            autoFocus
+                                                        />
+                                                        <div className="flex gap-1">
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={handleCreateRoom}
+                                                                disabled={isCreating}
+                                                                className="btn-primary hover:bg-[#e86d28]"
+                                                            >
+                                                                {isCreating ? '...' : '✓'}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={handleCancelCreate}
+                                                                disabled={isCreating}
+                                                                className="border-surface text-secondary"
+                                                            >
+                                                                ✕
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+                                                        Creating new room...
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
 
-                                                <div className="space-y-2 pt-2">
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            navigate({
-                                                                to: '/admin/rooms/$roomId/seats',
-                                                                params: { roomId: room.id }
-                                                            })
-                                                        }
-                                                        className="w-full btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                                        disabled={showCreateForm || showEditForm}
-                                                    >
-                                                        Xem ghế
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleEditRoom(room)}
-                                                        className="w-full border-surface text-secondary hover:bg-brand hover:text-primary"
-                                                        disabled={showCreateForm || showEditForm}
-                                                    >
-                                                        Sửa
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleDeleteRoom(room)}
-                                                        className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                                        disabled={showCreateForm || showEditForm}
-                                                    >
-                                                        Xóa
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
+                                        {/* Existing Rooms */}
+                                        {rooms.map((room, index) => (
+                                            <TableRow key={room.id}>
+                                                <TableCell className="font-medium text-primary">
+                                                    {index + 1}
+                                                </TableCell>
+                                                <TableCell className="font-semibold text-primary">
+                                                    {editingRoom?.id === room.id ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <Input
+                                                                type="text"
+                                                                value={editFormData.name}
+                                                                onChange={(e) =>
+                                                                    handleEditInputChange(
+                                                                        'name',
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                                className={`bg-brand border-surface text-primary ${
+                                                                    editFormErrors.name
+                                                                        ? 'border-red-500'
+                                                                        : ''
+                                                                }`}
+                                                                autoFocus
+                                                            />
+                                                            <div className="flex gap-1">
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={handleUpdateRoom}
+                                                                    disabled={isUpdating}
+                                                                    className="btn-primary hover:bg-[#e86d28]"
+                                                                >
+                                                                    {isUpdating ? '...' : '✓'}
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={handleCancelEdit}
+                                                                    disabled={isUpdating}
+                                                                    className="border-surface text-secondary"
+                                                                >
+                                                                    ✕
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        room.name
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                navigate({
+                                                                    to: '/admin/rooms/$roomId/seats',
+                                                                    params: { roomId: room.id }
+                                                                })
+                                                            }
+                                                            className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#e86d28]/30"
+                                                            disabled={
+                                                                showCreateForm ||
+                                                                editingRoom !== null
+                                                            }
+                                                        >
+                                                            View Seats
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleEditRoom(room)}
+                                                            className="border-surface text-secondary hover:bg-brand hover:text-primary"
+                                                            disabled={
+                                                                showCreateForm ||
+                                                                editingRoom !== null
+                                                            }
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleDeleteRoom(room)}
+                                                            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                            disabled={
+                                                                showCreateForm ||
+                                                                editingRoom !== null
+                                                            }
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </div>
                         </div>
                     )}
