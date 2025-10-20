@@ -5,6 +5,7 @@ import {
     BASE_SUPER_ADMIN,
     SUPER_ADMIN_ADMIN_ACCOUNTS,
     SUPER_ADMIN_BRANCH,
+    SUPER_ADMIN_REFRESHMENTS,
     SUPER_ADMIN_ROLE,
     SUPER_ADMIN_TYPE_SEATS
 } from '../routes'
@@ -96,6 +97,20 @@ const SuperAdminSidebar: React.FC = () => {
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h14a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3z"
+                    />
+                </svg>
+            )
+        },
+        {
+            label: 'Refreshments',
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_REFRESHMENTS}`,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
                     />
                 </svg>
             )
