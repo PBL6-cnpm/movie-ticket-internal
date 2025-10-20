@@ -12,6 +12,7 @@ import { verifyEmailSuccessRoute } from './features/auth/routes/VerifyEmailSucce
 import {
     adminAccountManageRoute,
     branchManageRoute,
+    refreshmentManageRoute,
     roleManageRoute,
     superAdminRoute,
     typeSeatManageRoute
@@ -31,6 +32,7 @@ export const routeTree = rootRoute.addChildren([
     branchManageRoute,
     adminAccountManageRoute,
     typeSeatManageRoute,
+    refreshmentManageRoute,
     adminRoute,
     adminRoomsRoute,
     adminSeatsRoute,
