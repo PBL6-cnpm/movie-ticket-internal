@@ -7,6 +7,7 @@ import {
     SUPER_ADMIN_BRANCH,
     SUPER_ADMIN_REFRESHMENTS,
     SUPER_ADMIN_ROLE,
+    SUPER_ADMIN_TYPE_DAY,
     SUPER_ADMIN_TYPE_SEATS
 } from '../routes'
 
@@ -97,6 +98,20 @@ const SuperAdminSidebar: React.FC = () => {
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h14a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3z"
+                    />
+                </svg>
+            )
+        },
+        {
+            label: 'Day Types',
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_TYPE_DAY}`,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                 </svg>
             )
