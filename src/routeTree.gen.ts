@@ -16,6 +16,7 @@ import {
     refreshmentManageRoute,
     roleManageRoute,
     superAdminRoute,
+    superAdminSpecialDateRoute,
     superAdminTypeDayRoute,
     typeSeatManageRoute
 } from './features/super-admin/routes'
@@ -35,6 +36,7 @@ export const routeTree = rootRoute.addChildren([
     adminAccountManageRoute,
     typeSeatManageRoute,
     superAdminTypeDayRoute,
+    superAdminSpecialDateRoute,
     refreshmentManageRoute,
     adminRoute,
     adminRoomsRoute,
