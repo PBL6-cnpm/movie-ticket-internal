@@ -5,6 +5,7 @@ import {
     BASE_SUPER_ADMIN,
     SUPER_ADMIN_ADMIN_ACCOUNTS,
     SUPER_ADMIN_BRANCH,
+    SUPER_ADMIN_MOVIES,
     SUPER_ADMIN_REFRESHMENTS,
     SUPER_ADMIN_ROLE,
     SUPER_ADMIN_SPECIAL_DATE,
@@ -106,6 +107,7 @@ const SuperAdminSidebar: React.FC = () => {
         {
             label: 'Day Types',
             href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_TYPE_DAY}`,
+
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -131,6 +133,23 @@ const SuperAdminSidebar: React.FC = () => {
                 </svg>
             )
         },
+
+        {
+            label: 'Movies',
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_MOVIES}`,
+
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4H5a2 2 0 00-2 2v11a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-2M7 4h10M9 9l2 2 4-4"
+                    />
+                </svg>
+            )
+        },
+
         {
             label: 'Refreshments',
             href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_REFRESHMENTS}`,

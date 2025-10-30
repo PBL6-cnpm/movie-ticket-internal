@@ -1,5 +1,6 @@
 export * from './AdminAccountManage'
 export * from './BranchManage'
+export * from './MoviesManage'
 export * from './RefreshmentManage'
 export * from './RoleManage'
 export * from './SpecialDateRoute'

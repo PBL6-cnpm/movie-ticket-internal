@@ -1,4 +1,4 @@
-import type { Movie } from '@/shared/api/movie-api'
+import type { Movie } from '@/features/super-admin/types/movie.types'
 import { getPaginatedMovies, searchMoviesByName } from '@/shared/api/movie-api'
 import { getAllMyBranchRooms } from '@/shared/api/room-api'
 import {
