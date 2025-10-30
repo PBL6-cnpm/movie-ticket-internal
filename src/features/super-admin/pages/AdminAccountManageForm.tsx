@@ -913,31 +913,70 @@ const AdminAccountManageForm: React.FC = () => {
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {(activeTab === 'all' ? adminAccounts : searchResults).map(
-                                (account) => {
-                                    const branchName =
-                                        branches.find((b) => b.id === account.branchId)?.name ||
-                                        'Unknown'
-                                    const isEditing = editingAccount?.id === account.id
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="border-b border-surface">
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Full Name
+                                        </th>
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Email
+                                        </th>
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Phone
+                                        </th>
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Branch
+                                        </th>
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Status
+                                        </th>
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Roles
+                                        </th>
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Created At
+                                        </th>
+                                        <th className="text-left p-4 font-semibold text-primary">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(activeTab === 'all' ? adminAccounts : searchResults).map(
+                                        (account) => {
+                                            const branchName =
+                                                branches.find((b) => b.id === account.branchId)
+                                                    ?.name || 'Unknown'
+                                            const isEditing = editingAccount?.id === account.id
 
-                                    return (
-                                        <div
-                                            key={account.id}
-                                            className="border border-surface rounded-lg overflow-hidden"
-                                        >
-                                            {/* Account Row */}
-                                            <div
-                                                className={`p-4 bg-brand transition-colors ${isEditing ? 'bg-orange-50/5' : 'hover:bg-surface/50'}`}
-                                            >
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center space-x-3 mb-3">
-                                                            <h3 className="font-semibold text-primary">
+                                            return (
+                                                <React.Fragment key={account.id}>
+                                                    <tr
+                                                        className={`border-b border-surface transition-colors ${
+                                                            isEditing
+                                                                ? 'bg-orange-50/10'
+                                                                : 'bg-brand hover:bg-surface/50'
+                                                        }`}
+                                                    >
+                                                        <td className="p-4">
+                                                            <div className="font-medium text-primary">
                                                                 {account.fullName}
-                                                            </h3>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-secondary">
+                                                            {account.email}
+                                                        </td>
+                                                        <td className="p-4 text-secondary">
+                                                            {account.phoneNumber || 'N/A'}
+                                                        </td>
+                                                        <td className="p-4 text-secondary">
+                                                            {branchName}
+                                                        </td>
+                                                        <td className="p-4">
                                                             <span
-                                                                className={`px-3 py-1 text-xs font-medium rounded-md border transition-colors ${
+                                                                className={`px-3 py-1 text-xs font-medium rounded-md border ${
                                                                     account.status ===
                                                                     AccountStatus.ACTIVE
                                                                         ? 'bg-green-50 text-green-700 border-green-200'
@@ -949,365 +988,414 @@ const AdminAccountManageForm: React.FC = () => {
                                                                     ? 'Active'
                                                                     : 'Deleted'}
                                                             </span>
-                                                            <div className="flex flex-wrap gap-2">
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <div className="flex flex-wrap gap-1">
                                                                 {account.roleNames &&
                                                                 account.roleNames.length > 0 ? (
                                                                     account.roleNames.map(
-                                                                        (role, index) => (
+                                                                        (role, roleIndex) => (
                                                                             <span
-                                                                                key={`${account.id}-role-${index}`}
-                                                                                className="px-3 py-1 text-xs font-medium rounded-md bg-brand-primary/10 text-brand-primary border border-brand-primary/20"
+                                                                                key={`${account.id}-role-${roleIndex}`}
+                                                                                className="px-2 py-1 text-xs font-medium rounded-md bg-blue-50 text-blue-700 border border-blue-200"
                                                                             >
                                                                                 {role}
                                                                             </span>
                                                                         )
                                                                     )
                                                                 ) : (
-                                                                    <span className="px-3 py-1 text-xs font-medium rounded-md bg-surface/50 text-secondary border border-surface">
+                                                                    <span className="px-2 py-1 text-xs font-medium rounded-md bg-gray-50 text-gray-600 border border-gray-200">
                                                                         No role
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                        </div>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                                                            <div className="text-secondary">
-                                                                <span className="font-medium">
-                                                                    Email:
-                                                                </span>{' '}
-                                                                {account.email}
-                                                            </div>
-                                                            <div className="text-secondary">
-                                                                <span className="font-medium">
-                                                                    Phone:
-                                                                </span>{' '}
-                                                                {account.phoneNumber}
-                                                            </div>
-                                                            <div className="text-secondary">
-                                                                <span className="font-medium">
-                                                                    Branch:
-                                                                </span>{' '}
-                                                                {branchName}
-                                                            </div>
-                                                            <div className="text-secondary">
-                                                                <span className="font-medium">
-                                                                    Created:
-                                                                </span>{' '}
-                                                                {formatDate(account.createdAt)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                if (isEditing) {
-                                                                    handleCancelEdit()
-                                                                } else {
-                                                                    handleEditAccount(account)
+                                                        </td>
+                                                        <td className="p-4 text-secondary text-sm">
+                                                            {formatDate(account.createdAt)}
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    if (isEditing) {
+                                                                        handleCancelEdit()
+                                                                    } else {
+                                                                        handleEditAccount(account)
+                                                                    }
+                                                                }}
+                                                                disabled={
+                                                                    editingAccount !== null &&
+                                                                    !isEditing
                                                                 }
-                                                            }}
-                                                            disabled={
-                                                                editingAccount !== null &&
-                                                                !isEditing
-                                                            }
-                                                            className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                                        >
-                                                            {isEditing ? 'Cancel' : 'Edit'}
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Inline Edit Form - Expands below the row */}
-                                            {isEditing && (
-                                                <div className="p-6 bg-surface/30 border-t border-surface">
-                                                    <h4 className="text-sm font-semibold text-primary mb-4">
-                                                        Edit Account Information
-                                                    </h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div className="space-y-4">
-                                                            {/* Email */}
-                                                            <div>
-                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                    Email *
-                                                                </label>
-                                                                <Input
-                                                                    type="email"
-                                                                    placeholder="admin@example.com"
-                                                                    value={editFormData.email}
-                                                                    onChange={(e) =>
-                                                                        handleEditInputChange(
-                                                                            'email',
-                                                                            e.target.value
-                                                                        )
-                                                                    }
-                                                                    className={`bg-brand border-surface text-primary ${
-                                                                        editFormErrors.email
-                                                                            ? 'border-red-500'
-                                                                            : ''
-                                                                    }`}
-                                                                    disabled={isUpdating}
-                                                                />
-                                                                {editFormErrors.email && (
-                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                        {editFormErrors.email}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Full Name */}
-                                                            <div>
-                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                    Full Name *
-                                                                </label>
-                                                                <Input
-                                                                    type="text"
-                                                                    placeholder="Enter full name..."
-                                                                    value={editFormData.fullName}
-                                                                    onChange={(e) =>
-                                                                        handleEditInputChange(
-                                                                            'fullName',
-                                                                            e.target.value
-                                                                        )
-                                                                    }
-                                                                    className={`bg-brand border-surface text-primary ${
-                                                                        editFormErrors.fullName
-                                                                            ? 'border-red-500'
-                                                                            : ''
-                                                                    }`}
-                                                                    disabled={isUpdating}
-                                                                />
-                                                                {editFormErrors.fullName && (
-                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                        {editFormErrors.fullName}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Phone */}
-                                                            <div>
-                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                    Phone Number *
-                                                                </label>
-                                                                <Input
-                                                                    type="tel"
-                                                                    placeholder="0123456789"
-                                                                    value={editFormData.phoneNumber}
-                                                                    onChange={(e) =>
-                                                                        handleEditInputChange(
-                                                                            'phoneNumber',
-                                                                            e.target.value
-                                                                        )
-                                                                    }
-                                                                    className={`bg-brand border-surface text-primary ${
-                                                                        editFormErrors.phoneNumber
-                                                                            ? 'border-red-500'
-                                                                            : ''
-                                                                    }`}
-                                                                    disabled={isUpdating}
-                                                                />
-                                                                {editFormErrors.phoneNumber && (
-                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                        {editFormErrors.phoneNumber}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Password */}
-                                                            <div>
-                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                    New Password (leave blank if not
-                                                                    changing)
-                                                                </label>
-                                                                <Input
-                                                                    type="password"
-                                                                    placeholder="Enter new password..."
-                                                                    value={
-                                                                        editFormData.password || ''
-                                                                    }
-                                                                    onChange={(e) =>
-                                                                        handleEditInputChange(
-                                                                            'password',
-                                                                            e.target.value
-                                                                        )
-                                                                    }
-                                                                    className="bg-brand border-surface text-primary"
-                                                                    disabled={isUpdating}
-                                                                />
-                                                                <p className="text-xs text-secondary mt-1">
-                                                                    Leave blank to keep current
-                                                                    password
-                                                                </p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="space-y-4">
-                                                            {/* Branch */}
-                                                            <div>
-                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                    Branch *
-                                                                </label>
-                                                                <Select
-                                                                    value={editFormData.branchId}
-                                                                    onValueChange={(value) =>
-                                                                        handleEditInputChange(
-                                                                            'branchId',
-                                                                            value
-                                                                        )
-                                                                    }
-                                                                    disabled={isUpdating}
-                                                                >
-                                                                    <SelectTrigger
-                                                                        className={`w-full bg-brand border-surface text-primary ${
-                                                                            editFormErrors.branchId
-                                                                                ? 'border-red-500'
-                                                                                : ''
-                                                                        }`}
-                                                                    >
-                                                                        <SelectValue placeholder="-- Select branch --" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent className="bg-surface border-surface">
-                                                                        {branches.map((branch) => (
-                                                                            <SelectItem
-                                                                                key={branch.id}
-                                                                                value={branch.id}
-                                                                                className="hover:bg-brand"
-                                                                            >
-                                                                                {branch.name}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
-                                                                {editFormErrors.branchId && (
-                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                        {editFormErrors.branchId}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Status */}
-                                                            <div>
-                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                    Status *
-                                                                </label>
-                                                                <Select
-                                                                    value={editFormData.status}
-                                                                    onValueChange={(
-                                                                        value: AccountStatus
-                                                                    ) =>
-                                                                        handleEditInputChange(
-                                                                            'status',
-                                                                            value
-                                                                        )
-                                                                    }
-                                                                    disabled={isUpdating}
-                                                                >
-                                                                    <SelectTrigger className="w-full bg-brand border-surface text-primary">
-                                                                        <SelectValue />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent className="bg-surface border-surface">
-                                                                        <SelectItem
-                                                                            value={
-                                                                                AccountStatus.ACTIVE
-                                                                            }
-                                                                        >
-                                                                            Active
-                                                                        </SelectItem>
-                                                                        <SelectItem
-                                                                            value={
-                                                                                AccountStatus.DELETED
-                                                                            }
-                                                                        >
-                                                                            Deleted
-                                                                        </SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </div>
-
-                                                            {/* Roles */}
-                                                            <div>
-                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                    Roles *
-                                                                </label>
-                                                                <div className="space-y-2 max-h-24 overflow-y-auto border border-surface rounded-md p-3 bg-brand">
-                                                                    {roles.map((role) => (
-                                                                        <div
-                                                                            key={role.roleId}
-                                                                            className="flex items-center space-x-2"
-                                                                        >
-                                                                            <Checkbox
-                                                                                id={`edit-role-${role.roleId}`}
-                                                                                checked={editFormData.roleIds.includes(
-                                                                                    role.roleId
+                                                                className={`transition-colors ${
+                                                                    isEditing
+                                                                        ? 'border-red-500 text-red-600 bg-red-50 hover:bg-red-100 font-semibold'
+                                                                        : 'border-orange-500 text-orange-600 bg-orange-50 hover:bg-orange-100 hover:border-orange-600 font-semibold'
+                                                                }`}
+                                                            >
+                                                                {isEditing ? 'Cancel' : 'Edit'}
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                    {/* Inline Edit Form - Expands below the row */}
+                                                    {isEditing && (
+                                                        <tr>
+                                                            <td colSpan={8} className="p-0">
+                                                                <div className="p-6 bg-surface/50 border-t border-surface">
+                                                                    <h4 className="text-sm font-semibold text-primary mb-4">
+                                                                        Edit Account Information
+                                                                    </h4>
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                        <div className="space-y-4">
+                                                                            {/* Email */}
+                                                                            <div>
+                                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                                    Email *
+                                                                                </label>
+                                                                                <Input
+                                                                                    type="email"
+                                                                                    placeholder="admin@example.com"
+                                                                                    value={
+                                                                                        editFormData.email
+                                                                                    }
+                                                                                    onChange={(e) =>
+                                                                                        handleEditInputChange(
+                                                                                            'email',
+                                                                                            e.target
+                                                                                                .value
+                                                                                        )
+                                                                                    }
+                                                                                    className={`bg-brand border-surface text-primary ${
+                                                                                        editFormErrors.email
+                                                                                            ? 'border-red-500'
+                                                                                            : ''
+                                                                                    }`}
+                                                                                    disabled={
+                                                                                        isUpdating
+                                                                                    }
+                                                                                />
+                                                                                {editFormErrors.email && (
+                                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                                        {
+                                                                                            editFormErrors.email
+                                                                                        }
+                                                                                    </p>
                                                                                 )}
-                                                                                onCheckedChange={(
-                                                                                    checked
-                                                                                ) => {
-                                                                                    const newRoleIds =
-                                                                                        checked
-                                                                                            ? [
-                                                                                                  ...editFormData.roleIds,
-                                                                                                  role.roleId
-                                                                                              ]
-                                                                                            : editFormData.roleIds.filter(
-                                                                                                  (
-                                                                                                      id
-                                                                                                  ) =>
-                                                                                                      id !==
-                                                                                                      role.roleId
-                                                                                              )
-                                                                                    handleEditInputChange(
-                                                                                        'roleIds',
-                                                                                        newRoleIds
-                                                                                    )
-                                                                                }}
-                                                                                disabled={
-                                                                                    isUpdating
-                                                                                }
-                                                                            />
-                                                                            <label
-                                                                                htmlFor={`edit-role-${role.roleId}`}
-                                                                                className="text-sm text-primary cursor-pointer"
-                                                                            >
-                                                                                {role.roleName}
-                                                                            </label>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                                {editFormErrors.roleIds && (
-                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                        {editFormErrors.roleIds}
-                                                                    </p>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                                            </div>
 
-                                                    {/* Form Actions */}
-                                                    <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-surface">
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={handleCancelEdit}
-                                                            disabled={isUpdating}
-                                                            className="border-surface text-secondary hover:bg-brand"
-                                                        >
-                                                            Cancel
-                                                        </Button>
-                                                        <Button
-                                                            onClick={handleUpdateAdminAccount}
-                                                            disabled={isUpdating}
-                                                            className="btn-primary hover:bg-[#e86d28]"
-                                                        >
-                                                            {isUpdating ? 'Updating...' : 'Update'}
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )
-                                }
-                            )}
+                                                                            {/* Full Name */}
+                                                                            <div>
+                                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                                    Full Name *
+                                                                                </label>
+                                                                                <Input
+                                                                                    type="text"
+                                                                                    placeholder="Enter full name..."
+                                                                                    value={
+                                                                                        editFormData.fullName
+                                                                                    }
+                                                                                    onChange={(e) =>
+                                                                                        handleEditInputChange(
+                                                                                            'fullName',
+                                                                                            e.target
+                                                                                                .value
+                                                                                        )
+                                                                                    }
+                                                                                    className={`bg-brand border-surface text-primary ${
+                                                                                        editFormErrors.fullName
+                                                                                            ? 'border-red-500'
+                                                                                            : ''
+                                                                                    }`}
+                                                                                    disabled={
+                                                                                        isUpdating
+                                                                                    }
+                                                                                />
+                                                                                {editFormErrors.fullName && (
+                                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                                        {
+                                                                                            editFormErrors.fullName
+                                                                                        }
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* Phone */}
+                                                                            <div>
+                                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                                    Phone Number *
+                                                                                </label>
+                                                                                <Input
+                                                                                    type="tel"
+                                                                                    placeholder="0123456789"
+                                                                                    value={
+                                                                                        editFormData.phoneNumber
+                                                                                    }
+                                                                                    onChange={(e) =>
+                                                                                        handleEditInputChange(
+                                                                                            'phoneNumber',
+                                                                                            e.target
+                                                                                                .value
+                                                                                        )
+                                                                                    }
+                                                                                    className={`bg-brand border-surface text-primary ${
+                                                                                        editFormErrors.phoneNumber
+                                                                                            ? 'border-red-500'
+                                                                                            : ''
+                                                                                    }`}
+                                                                                    disabled={
+                                                                                        isUpdating
+                                                                                    }
+                                                                                />
+                                                                                {editFormErrors.phoneNumber && (
+                                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                                        {
+                                                                                            editFormErrors.phoneNumber
+                                                                                        }
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* Password */}
+                                                                            <div>
+                                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                                    New Password
+                                                                                    (leave blank if
+                                                                                    not changing)
+                                                                                </label>
+                                                                                <Input
+                                                                                    type="password"
+                                                                                    placeholder="Enter new password..."
+                                                                                    value={
+                                                                                        editFormData.password ||
+                                                                                        ''
+                                                                                    }
+                                                                                    onChange={(e) =>
+                                                                                        handleEditInputChange(
+                                                                                            'password',
+                                                                                            e.target
+                                                                                                .value
+                                                                                        )
+                                                                                    }
+                                                                                    className="bg-brand border-surface text-primary"
+                                                                                    disabled={
+                                                                                        isUpdating
+                                                                                    }
+                                                                                />
+                                                                                <p className="text-xs text-secondary mt-1">
+                                                                                    Leave blank to
+                                                                                    keep current
+                                                                                    password
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="space-y-4">
+                                                                            {/* Branch */}
+                                                                            <div>
+                                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                                    Branch *
+                                                                                </label>
+                                                                                <Select
+                                                                                    value={
+                                                                                        editFormData.branchId
+                                                                                    }
+                                                                                    onValueChange={(
+                                                                                        value
+                                                                                    ) =>
+                                                                                        handleEditInputChange(
+                                                                                            'branchId',
+                                                                                            value
+                                                                                        )
+                                                                                    }
+                                                                                    disabled={
+                                                                                        isUpdating
+                                                                                    }
+                                                                                >
+                                                                                    <SelectTrigger
+                                                                                        className={`w-full bg-brand border-surface text-primary ${
+                                                                                            editFormErrors.branchId
+                                                                                                ? 'border-red-500'
+                                                                                                : ''
+                                                                                        }`}
+                                                                                    >
+                                                                                        <SelectValue placeholder="-- Select branch --" />
+                                                                                    </SelectTrigger>
+                                                                                    <SelectContent className="bg-surface border-surface">
+                                                                                        {branches.map(
+                                                                                            (
+                                                                                                branch
+                                                                                            ) => (
+                                                                                                <SelectItem
+                                                                                                    key={
+                                                                                                        branch.id
+                                                                                                    }
+                                                                                                    value={
+                                                                                                        branch.id
+                                                                                                    }
+                                                                                                    className="hover:bg-brand"
+                                                                                                >
+                                                                                                    {
+                                                                                                        branch.name
+                                                                                                    }
+                                                                                                </SelectItem>
+                                                                                            )
+                                                                                        )}
+                                                                                    </SelectContent>
+                                                                                </Select>
+                                                                                {editFormErrors.branchId && (
+                                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                                        {
+                                                                                            editFormErrors.branchId
+                                                                                        }
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* Status */}
+                                                                            <div>
+                                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                                    Status *
+                                                                                </label>
+                                                                                <Select
+                                                                                    value={
+                                                                                        editFormData.status
+                                                                                    }
+                                                                                    onValueChange={(
+                                                                                        value: AccountStatus
+                                                                                    ) =>
+                                                                                        handleEditInputChange(
+                                                                                            'status',
+                                                                                            value
+                                                                                        )
+                                                                                    }
+                                                                                    disabled={
+                                                                                        isUpdating
+                                                                                    }
+                                                                                >
+                                                                                    <SelectTrigger className="w-full bg-brand border-surface text-primary">
+                                                                                        <SelectValue />
+                                                                                    </SelectTrigger>
+                                                                                    <SelectContent className="bg-surface border-surface">
+                                                                                        <SelectItem
+                                                                                            value={
+                                                                                                AccountStatus.ACTIVE
+                                                                                            }
+                                                                                        >
+                                                                                            Active
+                                                                                        </SelectItem>
+                                                                                        <SelectItem
+                                                                                            value={
+                                                                                                AccountStatus.DELETED
+                                                                                            }
+                                                                                        >
+                                                                                            Deleted
+                                                                                        </SelectItem>
+                                                                                    </SelectContent>
+                                                                                </Select>
+                                                                            </div>
+
+                                                                            {/* Roles */}
+                                                                            <div>
+                                                                                <label className="text-sm font-medium text-primary block mb-2">
+                                                                                    Roles *
+                                                                                </label>
+                                                                                <div className="space-y-2 max-h-32 overflow-y-auto border border-surface rounded-md p-3 bg-brand">
+                                                                                    {roles.map(
+                                                                                        (role) => (
+                                                                                            <div
+                                                                                                key={
+                                                                                                    role.roleId
+                                                                                                }
+                                                                                                className="flex items-center space-x-2"
+                                                                                            >
+                                                                                                <Checkbox
+                                                                                                    id={`edit-role-${role.roleId}`}
+                                                                                                    checked={editFormData.roleIds.includes(
+                                                                                                        role.roleId
+                                                                                                    )}
+                                                                                                    onCheckedChange={(
+                                                                                                        checked
+                                                                                                    ) => {
+                                                                                                        const newRoleIds =
+                                                                                                            checked
+                                                                                                                ? [
+                                                                                                                      ...editFormData.roleIds,
+                                                                                                                      role.roleId
+                                                                                                                  ]
+                                                                                                                : editFormData.roleIds.filter(
+                                                                                                                      (
+                                                                                                                          id
+                                                                                                                      ) =>
+                                                                                                                          id !==
+                                                                                                                          role.roleId
+                                                                                                                  )
+                                                                                                        handleEditInputChange(
+                                                                                                            'roleIds',
+                                                                                                            newRoleIds
+                                                                                                        )
+                                                                                                    }}
+                                                                                                    disabled={
+                                                                                                        isUpdating
+                                                                                                    }
+                                                                                                />
+                                                                                                <label
+                                                                                                    htmlFor={`edit-role-${role.roleId}`}
+                                                                                                    className="text-sm text-primary cursor-pointer"
+                                                                                                >
+                                                                                                    {
+                                                                                                        role.roleName
+                                                                                                    }
+                                                                                                </label>
+                                                                                            </div>
+                                                                                        )
+                                                                                    )}
+                                                                                </div>
+                                                                                {editFormErrors.roleIds && (
+                                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                                        {
+                                                                                            editFormErrors.roleIds
+                                                                                        }
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Form Actions */}
+                                                                    <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-surface">
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            onClick={
+                                                                                handleCancelEdit
+                                                                            }
+                                                                            disabled={isUpdating}
+                                                                            className="border-surface text-secondary hover:bg-brand"
+                                                                        >
+                                                                            Cancel
+                                                                        </Button>
+                                                                        <Button
+                                                                            onClick={
+                                                                                handleUpdateAdminAccount
+                                                                            }
+                                                                            disabled={isUpdating}
+                                                                            className="btn-primary hover:bg-[#e86d28]"
+                                                                        >
+                                                                            {isUpdating
+                                                                                ? 'Updating...'
+                                                                                : 'Update'}
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
+                                            )
+                                        }
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     )}
 

@@ -1,37 +1,13 @@
+import type {
+    CreateMovieDto,
+    Movie,
+    MovieApiResponse,
+    MovieApiResponseSingle,
+    MovieDetailApiResponse,
+    PaginationDto,
+    UpdateMovieDto
+} from '@/features/super-admin/types/movie.types'
 import { apiClient } from './api-client'
-
-export interface Movie {
-    id: string
-    name: string
-    poster: string
-}
-
-export interface PaginationDto {
-    limit?: number
-    offset?: number
-    search?: string
-}
-
-export interface Meta {
-    total: number
-    limit: number
-    offset: number
-    totalPages?: number
-}
-
-export interface IPaginatedResponse<T> {
-    items: T[]
-    meta: Meta
-    currentPage?: number
-}
-
-export interface MovieApiResponse {
-    success: boolean
-    statusCode: number
-    message: string
-    code: string
-    data: IPaginatedResponse<Movie>
-}
 
 // Get paginated movies (without search)
 export const getPaginatedMovies = async (
@@ -148,4 +124,97 @@ export const searchMovies = async (
         limit: pageSize,
         offset
     })
+}
+
+// Get movie detail by ID
+export const getMovieById = async (id: string): Promise<MovieDetailApiResponse> => {
+    try {
+        const response = await apiClient.get(`/movies/${id}`)
+        return response.data
+    } catch (error) {
+        console.error('Error getting movie detail:', error)
+        throw error
+    }
+}
+
+// Create new movie
+export const createMovie = async (movieData: CreateMovieDto): Promise<MovieApiResponseSingle> => {
+    try {
+        const formData = new FormData()
+
+        formData.append('name', movieData.name)
+        formData.append('description', movieData.description)
+        formData.append('duration', movieData.duration.toString())
+        formData.append('ageLimit', movieData.ageLimit.toString())
+        formData.append('director', movieData.director)
+        if (movieData.trailer) formData.append('trailer', movieData.trailer)
+        formData.append('releaseDate', movieData.releaseDate)
+        if (movieData.screeningStart) formData.append('screeningStart', movieData.screeningStart)
+        if (movieData.screeningEnd) formData.append('screeningEnd', movieData.screeningEnd)
+
+        formData.append('genre', movieData.genre.join(','))
+
+        formData.append('actors', movieData.actors.join(','))
+
+        if (movieData.poster) formData.append('poster', movieData.poster)
+
+        const response = await apiClient.post('/movies', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+        return response.data
+    } catch (error) {
+        console.error('Error creating movie:', error)
+        throw error
+    }
+}
+
+// Update existing movie
+export const updateMovie = async (movieData: UpdateMovieDto): Promise<MovieApiResponseSingle> => {
+    try {
+        const formData = new FormData()
+
+        if (movieData.name !== undefined) formData.append('name', movieData.name)
+        if (movieData.description !== undefined)
+            formData.append('description', movieData.description)
+        if (movieData.duration !== undefined)
+            formData.append('duration', movieData.duration.toString())
+        if (movieData.ageLimit !== undefined)
+            formData.append('ageLimit', movieData.ageLimit.toString())
+        if (movieData.director !== undefined) formData.append('director', movieData.director)
+        if (movieData.trailer !== undefined) formData.append('trailer', movieData.trailer)
+        if (movieData.releaseDate !== undefined)
+            formData.append('releaseDate', movieData.releaseDate)
+        if (movieData.screeningStart !== undefined)
+            formData.append('screeningStart', movieData.screeningStart)
+        if (movieData.screeningEnd !== undefined)
+            formData.append('screeningEnd', movieData.screeningEnd)
+
+        if (movieData.genre !== undefined) formData.append('genre', movieData.genre.join(','))
+
+        if (movieData.actors !== undefined) formData.append('actors', movieData.actors.join(','))
+
+        if (movieData.poster !== undefined) formData.append('poster', movieData.poster)
+
+        const response = await apiClient.patch(`/movies/${movieData.id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+        return response.data
+    } catch (error) {
+        console.error('Error updating movie:', error)
+        throw error
+    }
+}
+
+// Delete movie by ID
+export const deleteMovie = async (id: string): Promise<void> => {
+    try {
+        await apiClient.delete(`/movies/${id}`)
+    } catch (error) {
+        console.error('Error deleting movie:', error)
+        throw error
+    }
 }
