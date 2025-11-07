@@ -23,7 +23,8 @@ import type {
 } from '@/shared/types/special-day/special-date.types'
 import { showDeleteConfirm } from '@/shared/utils/confirm'
 import { showToast } from '@/shared/utils/toast'
-import { useEffect, useState } from 'react'
+import { Edit2, MoreHorizontal, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 interface FormData {
     date: string
@@ -81,6 +82,28 @@ export default function SpecialDateManageForm() {
     const [editFormData, setEditFormData] = useState<FormData>(initialFormData)
     const [editFormErrors, setEditFormErrors] = useState<FormErrors>({})
     const [isUpdating, setIsUpdating] = useState(false)
+
+    // Dropdown state
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Handle click outside dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setActiveDropdown(null)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
+    const toggleDropdown = (dateId: string) => {
+        setActiveDropdown(activeDropdown === dateId ? null : dateId)
+    }
 
     const fetchSpecialDates = async () => {
         try {
@@ -261,203 +284,243 @@ export default function SpecialDateManageForm() {
                     {loading ? (
                         <div className="p-8 text-center text-secondary">Loading...</div>
                     ) : (
-                        <>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="text-center">#</TableHead>
-                                        <TableHead className="text-center">Date</TableHead>
-                                        <TableHead className="text-center">
-                                            Additional Price
-                                        </TableHead>
-                                        <TableHead className="text-center">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {showCreateForm && (
-                                        <TableRow className="bg-accent/50">
-                                            <TableCell className="text-center">-</TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="date"
-                                                    value={formData.date}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            date: e.target.value
-                                                        })
-                                                    }
-                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                        formErrors.date ? 'border-red-500' : ''
-                                                    }`}
-                                                    autoFocus
-                                                    disabled={isCreating}
-                                                />
-                                                {formErrors.date && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {formErrors.date}
-                                                    </p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="1000"
-                                                    placeholder="Additional price"
-                                                    value={formData.additionalPrice}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            additionalPrice: Number(e.target.value)
-                                                        })
-                                                    }
-                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                        formErrors.additionalPrice
-                                                            ? 'border-red-500'
-                                                            : ''
-                                                    }`}
-                                                    disabled={isCreating}
-                                                />
-                                                {formErrors.additionalPrice && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {formErrors.additionalPrice}
-                                                    </p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Button
-                                                        variant="default"
-                                                        size="sm"
-                                                        onClick={handleCreate}
-                                                        disabled={isCreating}
-                                                    >
-                                                        {isCreating ? 'Saving...' : 'Save'}
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={handleCancelCreate}
-                                                        disabled={isCreating}
-                                                    >
-                                                        Cancel
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+                        <div style={{ overflow: 'visible' }}>
+                            <div className="[&>div]:overflow-visible">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="text-center">#</TableHead>
+                                            <TableHead className="text-center">Date</TableHead>
+                                            <TableHead className="text-center">
+                                                Additional Price
+                                            </TableHead>
+                                            <TableHead className="text-center">Actions</TableHead>
                                         </TableRow>
-                                    )}
-
-                                    {specialDates.map((specialDate, index) => (
-                                        <TableRow key={specialDate.id}>
-                                            <TableCell className="text-center">
-                                                {index + 1}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <span className="font-medium">
-                                                    {formatDate(specialDate.date)}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {isEditing(specialDate.id) ? (
-                                                    <div>
-                                                        <Input
-                                                            type="number"
-                                                            min="0"
-                                                            step="1000"
-                                                            value={editFormData.additionalPrice}
-                                                            onChange={(e) =>
-                                                                setEditFormData((prev) => ({
-                                                                    ...prev,
-                                                                    additionalPrice: Number(
-                                                                        e.target.value
-                                                                    )
-                                                                }))
-                                                            }
-                                                            className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                                editFormErrors.additionalPrice
-                                                                    ? 'border-red-500'
-                                                                    : ''
-                                                            }`}
-                                                            disabled={isUpdating}
-                                                        />
-                                                        {editFormErrors.additionalPrice && (
-                                                            <p className="text-red-500 text-xs mt-1">
-                                                                {editFormErrors.additionalPrice}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span
-                                                        className={`font-semibold ${
-                                                            specialDate.additionalPrice > 0
-                                                                ? 'text-green-600'
-                                                                : 'text-gray-500'
+                                    </TableHeader>
+                                    <TableBody>
+                                        {showCreateForm && (
+                                            <TableRow className="bg-accent/50">
+                                                <TableCell className="text-center">-</TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="date"
+                                                        value={formData.date}
+                                                        onChange={(e) =>
+                                                            setFormData({
+                                                                ...formData,
+                                                                date: e.target.value
+                                                            })
+                                                        }
+                                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                            formErrors.date ? 'border-red-500' : ''
                                                         }`}
-                                                    >
-                                                        {formatCurrency(
-                                                            specialDate.additionalPrice
-                                                        )}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {isEditing(specialDate.id) ? (
+                                                        autoFocus
+                                                        disabled={isCreating}
+                                                    />
+                                                    {formErrors.date && (
+                                                        <p className="text-red-500 text-xs mt-1">
+                                                            {formErrors.date}
+                                                        </p>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        step="1000"
+                                                        placeholder="Additional price"
+                                                        value={formData.additionalPrice}
+                                                        onChange={(e) =>
+                                                            setFormData({
+                                                                ...formData,
+                                                                additionalPrice: Number(
+                                                                    e.target.value
+                                                                )
+                                                            })
+                                                        }
+                                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                            formErrors.additionalPrice
+                                                                ? 'border-red-500'
+                                                                : ''
+                                                        }`}
+                                                        disabled={isCreating}
+                                                    />
+                                                    {formErrors.additionalPrice && (
+                                                        <p className="text-red-500 text-xs mt-1">
+                                                            {formErrors.additionalPrice}
+                                                        </p>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-center">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Button
                                                             variant="default"
                                                             size="sm"
-                                                            onClick={handleSaveEdit}
-                                                            disabled={isUpdating}
+                                                            onClick={handleCreate}
+                                                            disabled={isCreating}
                                                         >
-                                                            {isUpdating ? 'Saving...' : 'Save'}
+                                                            {isCreating ? 'Saving...' : 'Save'}
                                                         </Button>
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={handleCancelEditInline}
-                                                            disabled={isUpdating}
+                                                            onClick={handleCancelCreate}
+                                                            disabled={isCreating}
                                                         >
                                                             Cancel
                                                         </Button>
                                                     </div>
-                                                ) : (
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleStartEdit(specialDate)
-                                                            }
-                                                        >
-                                                            Edit
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    specialDate.id,
-                                                                    specialDate.date
-                                                                )
-                                                            }
-                                                        >
-                                                            Delete
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
 
-                            {specialDates.length === 0 && !showCreateForm && (
-                                <div className="p-8 text-center text-secondary">
-                                    No special dates found. Click "Add Special Date" to create one.
-                                </div>
-                            )}
-                        </>
+                                        {specialDates.map((specialDate, index) => (
+                                            <TableRow key={specialDate.id}>
+                                                <TableCell className="text-center">
+                                                    {index + 1}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    <span className="font-medium">
+                                                        {formatDate(specialDate.date)}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    {isEditing(specialDate.id) ? (
+                                                        <div>
+                                                            <Input
+                                                                type="number"
+                                                                min="0"
+                                                                step="1000"
+                                                                value={editFormData.additionalPrice}
+                                                                onChange={(e) =>
+                                                                    setEditFormData((prev) => ({
+                                                                        ...prev,
+                                                                        additionalPrice: Number(
+                                                                            e.target.value
+                                                                        )
+                                                                    }))
+                                                                }
+                                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                                    editFormErrors.additionalPrice
+                                                                        ? 'border-red-500'
+                                                                        : ''
+                                                                }`}
+                                                                disabled={isUpdating}
+                                                            />
+                                                            {editFormErrors.additionalPrice && (
+                                                                <p className="text-red-500 text-xs mt-1">
+                                                                    {editFormErrors.additionalPrice}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span
+                                                            className={`font-semibold ${
+                                                                specialDate.additionalPrice > 0
+                                                                    ? 'text-green-600'
+                                                                    : 'text-gray-500'
+                                                            }`}
+                                                        >
+                                                            {formatCurrency(
+                                                                specialDate.additionalPrice
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                    {isEditing(specialDate.id) ? (
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Button
+                                                                variant="default"
+                                                                size="sm"
+                                                                onClick={handleSaveEdit}
+                                                                disabled={isUpdating}
+                                                            >
+                                                                {isUpdating ? 'Saving...' : 'Save'}
+                                                            </Button>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={handleCancelEditInline}
+                                                                disabled={isUpdating}
+                                                            >
+                                                                Cancel
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <div className="relative dropdown-container">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        toggleDropdown(
+                                                                            specialDate.id
+                                                                        )
+                                                                    }
+                                                                    className="border border-surface text-secondary hover:bg-brand hover:text-primary h-8 w-8 p-0 transition-colors"
+                                                                >
+                                                                    <MoreHorizontal className="w-4 h-4" />
+                                                                </Button>
+
+                                                                {/* Dropdown Menu */}
+                                                                {activeDropdown ===
+                                                                    specialDate.id && (
+                                                                    <div
+                                                                        ref={dropdownRef}
+                                                                        className="absolute right-0 top-full mt-2 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1"
+                                                                    >
+                                                                        {/* Arrow pointing to button */}
+                                                                        <div className="absolute -top-2 right-2 w-4 h-4 bg-gray-800 border-t border-l border-gray-700 transform rotate-45 z-[-1]"></div>
+
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleStartEdit(
+                                                                                    specialDate
+                                                                                )
+                                                                                setActiveDropdown(
+                                                                                    null
+                                                                                )
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-blue-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <Edit2 className="w-4 h-4 text-blue-400" />
+                                                                            Edit
+                                                                        </button>
+                                                                        <div className="border-t border-surface my-1" />
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleDelete(
+                                                                                    specialDate.id,
+                                                                                    specialDate.date
+                                                                                )
+                                                                                setActiveDropdown(
+                                                                                    null
+                                                                                )
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+
+                                {specialDates.length === 0 && !showCreateForm && (
+                                    <div className="p-8 text-center text-secondary">
+                                        No special dates found. Click "Add Special Date" to create
+                                        one.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </CardContent>
             </Card>

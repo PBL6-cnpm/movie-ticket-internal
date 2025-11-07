@@ -58,13 +58,9 @@ const AdminAccountManageForm: React.FC = () => {
 
     // Edit form states
     const [editFormData, setEditFormData] = useState<UpdateAdminAccountRequest>({
-        email: '',
-        fullName: '',
-        phoneNumber: '',
         branchId: '',
         status: AccountStatus.ACTIVE,
         roleIds: []
-        // password is undefined by default (keep current password)
     })
 
     // Form validation
@@ -423,10 +419,6 @@ const AdminAccountManageForm: React.FC = () => {
 
         setEditingAccount(account)
         setEditFormData({
-            email: account.email,
-            // password is undefined (keep current password)
-            fullName: account.fullName,
-            phoneNumber: account.phoneNumber || '',
             branchId: account.branchId,
             status: account.status,
             roleIds: accountRoleIds
@@ -458,27 +450,11 @@ const AdminAccountManageForm: React.FC = () => {
     const validateEditForm = (): boolean => {
         const errors: Record<string, string> = {}
 
-        if (!editFormData.email.trim()) {
-            errors.email = 'Email is required'
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFormData.email)) {
-            errors.email = 'Invalid email'
-        }
-
-        if (!editFormData.fullName.trim()) {
-            errors.fullName = 'Full name is required'
-        }
-
-        if (!editFormData.phoneNumber.trim()) {
-            errors.phoneNumber = 'Phone number is required'
-        } else if (!/^[0-9]{10,11}$/.test(editFormData.phoneNumber)) {
-            errors.phoneNumber = 'Invalid phone number'
-        }
-
         if (!editFormData.branchId) {
             errors.branchId = 'Please select a branch'
         }
 
-        if (editFormData.roleIds.length === 0) {
+        if (!editFormData.roleIds || editFormData.roleIds.length === 0) {
             errors.roleIds = 'Please select at least one role'
         }
 
@@ -557,13 +533,9 @@ const AdminAccountManageForm: React.FC = () => {
     // Handle cancel edit
     const handleCancelEdit = () => {
         setEditFormData({
-            email: '',
-            fullName: '',
-            phoneNumber: '',
             branchId: '',
             status: AccountStatus.ACTIVE,
             roleIds: []
-            // password is undefined (keep current password)
         })
         setEditFormErrors({})
         setEditingAccount(null)
@@ -1046,150 +1018,7 @@ const AdminAccountManageForm: React.FC = () => {
                                                                     <h4 className="text-sm font-semibold text-primary mb-4">
                                                                         Edit Account Information
                                                                     </h4>
-                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                                        <div className="space-y-4">
-                                                                            {/* Email */}
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                                    Email *
-                                                                                </label>
-                                                                                <Input
-                                                                                    type="email"
-                                                                                    placeholder="admin@example.com"
-                                                                                    value={
-                                                                                        editFormData.email
-                                                                                    }
-                                                                                    onChange={(e) =>
-                                                                                        handleEditInputChange(
-                                                                                            'email',
-                                                                                            e.target
-                                                                                                .value
-                                                                                        )
-                                                                                    }
-                                                                                    className={`bg-brand border-surface text-primary ${
-                                                                                        editFormErrors.email
-                                                                                            ? 'border-red-500'
-                                                                                            : ''
-                                                                                    }`}
-                                                                                    disabled={
-                                                                                        isUpdating
-                                                                                    }
-                                                                                />
-                                                                                {editFormErrors.email && (
-                                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                                        {
-                                                                                            editFormErrors.email
-                                                                                        }
-                                                                                    </p>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Full Name */}
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                                    Full Name *
-                                                                                </label>
-                                                                                <Input
-                                                                                    type="text"
-                                                                                    placeholder="Enter full name..."
-                                                                                    value={
-                                                                                        editFormData.fullName
-                                                                                    }
-                                                                                    onChange={(e) =>
-                                                                                        handleEditInputChange(
-                                                                                            'fullName',
-                                                                                            e.target
-                                                                                                .value
-                                                                                        )
-                                                                                    }
-                                                                                    className={`bg-brand border-surface text-primary ${
-                                                                                        editFormErrors.fullName
-                                                                                            ? 'border-red-500'
-                                                                                            : ''
-                                                                                    }`}
-                                                                                    disabled={
-                                                                                        isUpdating
-                                                                                    }
-                                                                                />
-                                                                                {editFormErrors.fullName && (
-                                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                                        {
-                                                                                            editFormErrors.fullName
-                                                                                        }
-                                                                                    </p>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Phone */}
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                                    Phone Number *
-                                                                                </label>
-                                                                                <Input
-                                                                                    type="tel"
-                                                                                    placeholder="0123456789"
-                                                                                    value={
-                                                                                        editFormData.phoneNumber
-                                                                                    }
-                                                                                    onChange={(e) =>
-                                                                                        handleEditInputChange(
-                                                                                            'phoneNumber',
-                                                                                            e.target
-                                                                                                .value
-                                                                                        )
-                                                                                    }
-                                                                                    className={`bg-brand border-surface text-primary ${
-                                                                                        editFormErrors.phoneNumber
-                                                                                            ? 'border-red-500'
-                                                                                            : ''
-                                                                                    }`}
-                                                                                    disabled={
-                                                                                        isUpdating
-                                                                                    }
-                                                                                />
-                                                                                {editFormErrors.phoneNumber && (
-                                                                                    <p className="text-red-500 text-xs mt-1">
-                                                                                        {
-                                                                                            editFormErrors.phoneNumber
-                                                                                        }
-                                                                                    </p>
-                                                                                )}
-                                                                            </div>
-
-                                                                            {/* Password */}
-                                                                            <div>
-                                                                                <label className="text-sm font-medium text-primary block mb-2">
-                                                                                    New Password
-                                                                                    (leave blank if
-                                                                                    not changing)
-                                                                                </label>
-                                                                                <Input
-                                                                                    type="password"
-                                                                                    placeholder="Enter new password..."
-                                                                                    value={
-                                                                                        editFormData.password ||
-                                                                                        ''
-                                                                                    }
-                                                                                    onChange={(e) =>
-                                                                                        handleEditInputChange(
-                                                                                            'password',
-                                                                                            e.target
-                                                                                                .value
-                                                                                        )
-                                                                                    }
-                                                                                    className="bg-brand border-surface text-primary"
-                                                                                    disabled={
-                                                                                        isUpdating
-                                                                                    }
-                                                                                />
-                                                                                <p className="text-xs text-secondary mt-1">
-                                                                                    Leave blank to
-                                                                                    keep current
-                                                                                    password
-                                                                                </p>
-                                                                            </div>
-                                                                        </div>
-
+                                                                    <div className="grid grid-cols-1 gap-6">
                                                                         <div className="space-y-4">
                                                                             {/* Branch */}
                                                                             <div>
@@ -1311,19 +1140,22 @@ const AdminAccountManageForm: React.FC = () => {
                                                                                             >
                                                                                                 <Checkbox
                                                                                                     id={`edit-role-${role.roleId}`}
-                                                                                                    checked={editFormData.roleIds.includes(
+                                                                                                    checked={editFormData.roleIds?.includes(
                                                                                                         role.roleId
                                                                                                     )}
                                                                                                     onCheckedChange={(
                                                                                                         checked
                                                                                                     ) => {
+                                                                                                        const currentRoleIds =
+                                                                                                            editFormData.roleIds ||
+                                                                                                            []
                                                                                                         const newRoleIds =
                                                                                                             checked
                                                                                                                 ? [
-                                                                                                                      ...editFormData.roleIds,
+                                                                                                                      ...currentRoleIds,
                                                                                                                       role.roleId
                                                                                                                   ]
-                                                                                                                : editFormData.roleIds.filter(
+                                                                                                                : currentRoleIds.filter(
                                                                                                                       (
                                                                                                                           id
                                                                                                                       ) =>

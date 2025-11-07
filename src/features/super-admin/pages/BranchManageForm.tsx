@@ -1,3 +1,5 @@
+import { useAuthStore } from '@/features/auth/stores/auth.store'
+import { updateAccount } from '@/shared/api/account-api'
 import {
     createBranch,
     deleteBranch,
@@ -25,9 +27,13 @@ import {
 } from '@/shared/components/ui/table'
 import { showDeleteConfirm } from '@/shared/utils/confirm'
 import { showToast } from '@/shared/utils/toast'
-import React, { useEffect, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { Calendar, Edit2, Eye, MoreHorizontal, Trash2, Users } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
 
 const BranchManageForm: React.FC = () => {
+    const navigate = useNavigate()
+    const { account } = useAuthStore()
     const [branches, setBranches] = useState<Branch[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const [showCreateForm, setShowCreateForm] = useState<boolean>(false)
@@ -44,6 +50,26 @@ const BranchManageForm: React.FC = () => {
     const [editFormErrors, setEditFormErrors] = useState({ name: false, address: false })
     const [isCreating, setIsCreating] = useState<boolean>(false)
     const [isUpdating, setIsUpdating] = useState<boolean>(false)
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Handle click outside dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setActiveDropdown(null)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
+    const toggleDropdown = (branchId: string) => {
+        setActiveDropdown(activeDropdown === branchId ? null : branchId)
+    }
 
     // Fetch all branches on component mount
     useEffect(() => {
@@ -169,6 +195,84 @@ const BranchManageForm: React.FC = () => {
         setEditFormErrors({ name: false, address: false })
     }
 
+    const handleViewRooms = async (branch: Branch) => {
+        if (!account) {
+            showToast.error('Account information not found')
+            return
+        }
+
+        try {
+            setActiveDropdown(null)
+
+            // Update account's branch - only send branchId
+            const response = await updateAccount(account.id, {
+                branchId: branch.id
+            })
+
+            if (response.success) {
+                showToast.success(`Switched to branch: ${branch.name}`)
+                navigate({ to: '/super-admin/rooms' })
+            } else {
+                throw new Error(response.message || 'Failed to update branch')
+            }
+        } catch (error) {
+            console.error('Error updating branch:', error)
+            showToast.error('An error occurred while switching branch')
+        }
+    }
+
+    const handleViewShowTimes = async (branch: Branch) => {
+        if (!account) {
+            showToast.error('Account information not found')
+            return
+        }
+
+        try {
+            setActiveDropdown(null)
+
+            // Update account's branch - only send branchId
+            const response = await updateAccount(account.id, {
+                branchId: branch.id
+            })
+
+            if (response.success) {
+                showToast.success(`Switched to branch: ${branch.name}`)
+                navigate({ to: '/super-admin/show-times' })
+            } else {
+                throw new Error(response.message || 'Failed to update branch')
+            }
+        } catch (error) {
+            console.error('Error updating branch:', error)
+            showToast.error('An error occurred while switching branch')
+        }
+    }
+
+    const handleViewStaffAccounts = async (branch: Branch) => {
+        if (!account) {
+            showToast.error('Account information not found')
+            return
+        }
+
+        try {
+            setActiveDropdown(null)
+
+            // Update account's branch - only send branchId
+            const response = await updateAccount(account.id, {
+                branchId: branch.id
+            })
+
+            if (response.success) {
+                showToast.success(`Switched to branch: ${branch.name}`)
+                navigate({ to: '/super-admin/staff-accounts' })
+            } else {
+                throw new Error(response.message || 'Failed to update branch')
+            }
+        } catch (error) {
+            console.error('Error updating branch:', error)
+            showToast.error('An error occurred while switching branch')
+        }
+    }
+
     const handleCancelEdit = () => {
         setEditingBranch(null)
         setEditFormData({ name: '', address: '' })
@@ -236,207 +340,290 @@ const BranchManageForm: React.FC = () => {
                             <p className="text-secondary">No branches yet</p>
                         </div>
                     ) : (
-                        <div className="rounded-md border border-surface">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[50px] text-primary">#</TableHead>
-                                        <TableHead className="text-primary">Branch Name</TableHead>
-                                        <TableHead className="text-primary">Address</TableHead>
-                                        <TableHead className="w-[180px] text-primary">
-                                            Created Date
-                                        </TableHead>
-                                        <TableHead className="w-[180px] text-primary">
-                                            Updated Date
-                                        </TableHead>
-                                        <TableHead className="w-[200px] text-center text-primary">
-                                            Actions
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {/* Create Row */}
-                                    {showCreateForm && (
+                        <div
+                            className="rounded-md border border-surface"
+                            style={{ overflow: 'visible' }}
+                        >
+                            <div className="[&>div]:overflow-visible">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell className="font-medium text-primary">
-                                                New
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Enter branch name..."
-                                                    value={formData.name}
-                                                    onChange={(e) =>
-                                                        handleInputChange('name', e.target.value)
-                                                    }
-                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                        formErrors.name ? 'border-red-500' : ''
-                                                    }`}
-                                                    autoFocus
-                                                    disabled={isCreating}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Enter address..."
-                                                    value={formData.address}
-                                                    onChange={(e) =>
-                                                        handleInputChange('address', e.target.value)
-                                                    }
-                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                        formErrors.address ? 'border-red-500' : ''
-                                                    }`}
-                                                    disabled={isCreating}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="text-brand-secondary text-xs">
-                                                -
-                                            </TableCell>
-                                            <TableCell className="text-brand-secondary text-xs">
-                                                -
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex justify-center gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={handleCreateBranch}
-                                                        disabled={isCreating}
-                                                        className="btn-primary hover:bg-[#e86d28]"
-                                                    >
-                                                        {isCreating ? '...' : '✓'}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={handleCancelCreate}
-                                                        disabled={isCreating}
-                                                        className="border-surface text-secondary"
-                                                    >
-                                                        ✕
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+                                            <TableHead className="w-[50px] text-primary">
+                                                #
+                                            </TableHead>
+                                            <TableHead className="text-primary">
+                                                Branch Name
+                                            </TableHead>
+                                            <TableHead className="text-primary">Address</TableHead>
+                                            <TableHead className="w-[180px] text-primary">
+                                                Created Date
+                                            </TableHead>
+                                            <TableHead className="w-[180px] text-primary">
+                                                Updated Date
+                                            </TableHead>
+                                            <TableHead className="w-[200px] text-center text-primary">
+                                                Actions
+                                            </TableHead>
                                         </TableRow>
-                                    )}
-
-                                    {/* Existing Branches */}
-                                    {branches.map((branch, index) => (
-                                        <TableRow key={branch.id}>
-                                            <TableCell className="font-medium text-primary">
-                                                {index + 1}
-                                            </TableCell>
-                                            <TableCell>
-                                                {editingBranch?.id === branch.id ? (
+                                    </TableHeader>
+                                    <TableBody>
+                                        {/* Create Row */}
+                                        {showCreateForm && (
+                                            <TableRow>
+                                                <TableCell className="font-medium text-primary">
+                                                    New
+                                                </TableCell>
+                                                <TableCell>
                                                     <Input
                                                         type="text"
-                                                        value={editFormData.name}
+                                                        placeholder="Enter branch name..."
+                                                        value={formData.name}
                                                         onChange={(e) =>
-                                                            handleEditInputChange(
+                                                            handleInputChange(
                                                                 'name',
                                                                 e.target.value
                                                             )
                                                         }
-                                                        className={`bg-brand border-surface text-primary ${
-                                                            editFormErrors.name
-                                                                ? 'border-red-500'
-                                                                : ''
+                                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                            formErrors.name ? 'border-red-500' : ''
                                                         }`}
                                                         autoFocus
-                                                        disabled={isUpdating}
+                                                        disabled={isCreating}
                                                     />
-                                                ) : (
-                                                    <span className="font-semibold text-primary">
-                                                        {branch.name}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {editingBranch?.id === branch.id ? (
+                                                </TableCell>
+                                                <TableCell>
                                                     <Input
                                                         type="text"
-                                                        value={editFormData.address}
+                                                        placeholder="Enter address..."
+                                                        value={formData.address}
                                                         onChange={(e) =>
-                                                            handleEditInputChange(
+                                                            handleInputChange(
                                                                 'address',
                                                                 e.target.value
                                                             )
                                                         }
-                                                        className={`bg-brand border-surface text-primary ${
-                                                            editFormErrors.address
+                                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                            formErrors.address
                                                                 ? 'border-red-500'
                                                                 : ''
                                                         }`}
-                                                        disabled={isUpdating}
+                                                        disabled={isCreating}
                                                     />
-                                                ) : (
-                                                    <span className="text-secondary">
-                                                        {branch.address}
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-brand-secondary text-xs">
-                                                {formatDate(branch.createdAt)}
-                                            </TableCell>
-                                            <TableCell className="text-brand-secondary text-xs">
-                                                {formatDate(branch.updatedAt)}
-                                            </TableCell>
-                                            <TableCell>
-                                                {editingBranch?.id === branch.id ? (
+                                                </TableCell>
+                                                <TableCell className="text-brand-secondary text-xs">
+                                                    -
+                                                </TableCell>
+                                                <TableCell className="text-brand-secondary text-xs">
+                                                    -
+                                                </TableCell>
+                                                <TableCell>
                                                     <div className="flex justify-center gap-2">
                                                         <Button
                                                             size="sm"
-                                                            onClick={handleUpdateBranch}
-                                                            disabled={isUpdating}
+                                                            onClick={handleCreateBranch}
+                                                            disabled={isCreating}
                                                             className="btn-primary hover:bg-[#e86d28]"
                                                         >
-                                                            {isUpdating ? '...' : '✓'}
+                                                            {isCreating ? '...' : '✓'}
                                                         </Button>
                                                         <Button
                                                             size="sm"
                                                             variant="outline"
-                                                            onClick={handleCancelEdit}
-                                                            disabled={isUpdating}
+                                                            onClick={handleCancelCreate}
+                                                            disabled={isCreating}
                                                             className="border-surface text-secondary"
                                                         >
                                                             ✕
                                                         </Button>
                                                     </div>
-                                                ) : (
-                                                    <div className="flex justify-center gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleEditBranch(branch)}
-                                                            className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                                            disabled={
-                                                                showCreateForm ||
-                                                                editingBranch !== null
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+
+                                        {/* Existing Branches */}
+                                        {branches.map((branch, index) => (
+                                            <TableRow key={branch.id}>
+                                                <TableCell className="font-medium text-primary">
+                                                    {index + 1}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {editingBranch?.id === branch.id ? (
+                                                        <Input
+                                                            type="text"
+                                                            value={editFormData.name}
+                                                            onChange={(e) =>
+                                                                handleEditInputChange(
+                                                                    'name',
+                                                                    e.target.value
+                                                                )
                                                             }
-                                                        >
-                                                            Edit
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleDeleteBranch(branch)
+                                                            className={`bg-brand border-surface text-primary ${
+                                                                editFormErrors.name
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                            }`}
+                                                            autoFocus
+                                                            disabled={isUpdating}
+                                                        />
+                                                    ) : (
+                                                        <span className="font-semibold text-primary">
+                                                            {branch.name}
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {editingBranch?.id === branch.id ? (
+                                                        <Input
+                                                            type="text"
+                                                            value={editFormData.address}
+                                                            onChange={(e) =>
+                                                                handleEditInputChange(
+                                                                    'address',
+                                                                    e.target.value
+                                                                )
                                                             }
-                                                            className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                                                            disabled={
-                                                                showCreateForm ||
-                                                                editingBranch !== null
-                                                            }
-                                                        >
-                                                            Delete
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                                            className={`bg-brand border-surface text-primary ${
+                                                                editFormErrors.address
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                            }`}
+                                                            disabled={isUpdating}
+                                                        />
+                                                    ) : (
+                                                        <span className="text-secondary">
+                                                            {branch.address}
+                                                        </span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-brand-secondary text-xs">
+                                                    {formatDate(branch.createdAt)}
+                                                </TableCell>
+                                                <TableCell className="text-brand-secondary text-xs">
+                                                    {formatDate(branch.updatedAt)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {editingBranch?.id === branch.id ? (
+                                                        <div className="flex justify-center gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={handleUpdateBranch}
+                                                                disabled={isUpdating}
+                                                                className="btn-primary hover:bg-[#e86d28]"
+                                                            >
+                                                                {isUpdating ? '...' : '✓'}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={handleCancelEdit}
+                                                                disabled={isUpdating}
+                                                                className="border-surface text-secondary"
+                                                            >
+                                                                ✕
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-center gap-2">
+                                                            <div className="relative dropdown-container">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        toggleDropdown(branch.id)
+                                                                    }
+                                                                    className="border border-surface text-secondary hover:bg-brand hover:text-primary h-8 w-8 p-0 transition-colors"
+                                                                    disabled={
+                                                                        showCreateForm ||
+                                                                        editingBranch !== null
+                                                                    }
+                                                                >
+                                                                    <MoreHorizontal className="w-4 h-4" />
+                                                                </Button>
+
+                                                                {/* Dropdown Menu */}
+                                                                {activeDropdown === branch.id && (
+                                                                    <div
+                                                                        ref={dropdownRef}
+                                                                        className="absolute right-0 top-full mt-2 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1"
+                                                                    >
+                                                                        {/* Arrow pointing to button */}
+                                                                        <div className="absolute -top-2 right-2 w-4 h-4 bg-gray-800 border-t border-l border-gray-700 transform rotate-45 z-[-1]"></div>
+
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleViewRooms(
+                                                                                    branch
+                                                                                )
+                                                                            }
+                                                                            className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-green-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <Eye className="w-4 h-4 text-green-400" />
+                                                                            View Rooms
+                                                                        </button>
+                                                                        <div className="border-t border-surface my-1" />
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleViewShowTimes(
+                                                                                    branch
+                                                                                )
+                                                                            }
+                                                                            className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-purple-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <Calendar className="w-4 h-4 text-purple-400" />
+                                                                            View Show Times
+                                                                        </button>
+                                                                        <div className="border-t border-surface my-1" />
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleViewStaffAccounts(
+                                                                                    branch
+                                                                                )
+                                                                            }
+                                                                            className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-yellow-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <Users className="w-4 h-4 text-yellow-400" />
+                                                                            View Staff Accounts
+                                                                        </button>
+                                                                        <div className="border-t border-surface my-1" />
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleEditBranch(
+                                                                                    branch
+                                                                                )
+                                                                                setActiveDropdown(
+                                                                                    null
+                                                                                )
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-blue-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <Edit2 className="w-4 h-4 text-blue-400" />
+                                                                            Edit
+                                                                        </button>
+                                                                        <div className="border-t border-surface my-1" />
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                handleDeleteBranch(
+                                                                                    branch
+                                                                                )
+                                                                                setActiveDropdown(
+                                                                                    null
+                                                                                )
+                                                                            }}
+                                                                            className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     )}
                 </CardContent>

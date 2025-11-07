@@ -29,6 +29,7 @@ import {
     validateImageFile
 } from '@/shared/utils/image-upload'
 import { showToast } from '@/shared/utils/toast'
+import { Edit2, MoreHorizontal, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 interface FormData {
@@ -71,10 +72,32 @@ export default function RefreshmentManageForm() {
     const [editPreviewImage, setEditPreviewImage] = useState<string>('')
     const editFileInputRef = useRef<HTMLInputElement>(null)
 
+    // Dropdown state
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
     // Pagination
     const [currentPage, setCurrentPage] = useState(1)
     const [totalItems, setTotalItems] = useState(0)
     const pageSize = 10
+
+    // Handle click outside dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setActiveDropdown(null)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
+    const toggleDropdown = (refreshmentId: string) => {
+        setActiveDropdown(activeDropdown === refreshmentId ? null : refreshmentId)
+    }
 
     const fetchRefreshments = async () => {
         try {
@@ -391,408 +414,452 @@ export default function RefreshmentManageForm() {
                             <p className="text-secondary">No refreshments yet</p>
                         </div>
                     ) : (
-                        <div className="rounded-md border border-surface">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[50px] text-primary">#</TableHead>
-                                        <TableHead className="text-primary">Name</TableHead>
-                                        <TableHead className="w-[100px] text-primary">
-                                            Picture
-                                        </TableHead>
-                                        <TableHead className="text-primary">Price</TableHead>
-                                        <TableHead className="text-primary">Status</TableHead>
-                                        <TableHead className="w-[200px] text-center text-primary">
-                                            Actions
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {/* Create Form Row */}
-                                    {showCreateForm && (
+                        <div
+                            className="rounded-md border border-surface"
+                            style={{ overflow: 'visible' }}
+                        >
+                            <div className="[&>div]:overflow-visible">
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell className="font-medium text-primary">
-                                                New
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="text"
-                                                    placeholder="e.g. Popcorn"
-                                                    value={formData.name}
-                                                    onChange={(e) =>
-                                                        setFormData((prev) => ({
-                                                            ...prev,
-                                                            name: e.target.value
-                                                        }))
-                                                    }
-                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                        formErrors.name ? 'border-red-500' : ''
-                                                    }`}
-                                                    autoFocus
-                                                    disabled={isCreating}
-                                                />
-                                                {formErrors.name && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {formErrors.name}
-                                                    </p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="space-y-2">
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        ref={fileInputRef}
-                                                        onChange={handleFileSelect}
-                                                        className="hidden"
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            fileInputRef.current?.click()
-                                                        }
-                                                        className={
-                                                            formErrors.picture
-                                                                ? 'border-red-500'
-                                                                : ''
-                                                        }
-                                                        disabled={isCreating}
-                                                    >
-                                                        Choose Image
-                                                    </Button>
-                                                    {(previewImage ||
-                                                        (typeof formData.picture === 'string' &&
-                                                            formData.picture)) && (
-                                                        <img
-                                                            src={
-                                                                previewImage ||
-                                                                (typeof formData.picture ===
-                                                                'string'
-                                                                    ? formData.picture
-                                                                    : '')
-                                                            }
-                                                            alt="Preview"
-                                                            className="w-16 h-16 object-cover rounded-md border border-surface"
-                                                            onError={(e) => {
-                                                                e.currentTarget.style.display =
-                                                                    'none'
-                                                            }}
-                                                        />
-                                                    )}
-                                                    {formErrors.picture && (
-                                                        <p className="text-red-500 text-xs mt-1">
-                                                            {formErrors.picture}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    step="1000"
-                                                    placeholder="50000"
-                                                    value={formData.price}
-                                                    onChange={(e) =>
-                                                        setFormData((prev) => ({
-                                                            ...prev,
-                                                            price: Number(e.target.value)
-                                                        }))
-                                                    }
-                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                        formErrors.price ? 'border-red-500' : ''
-                                                    }`}
-                                                    disabled={isCreating}
-                                                />
-                                                {formErrors.price && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {formErrors.price}
-                                                    </p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id="createIsCurrent"
-                                                        checked={formData.isCurrent}
-                                                        onCheckedChange={(checked) =>
+                                            <TableHead className="w-[50px] text-primary">
+                                                #
+                                            </TableHead>
+                                            <TableHead className="text-primary">Name</TableHead>
+                                            <TableHead className="w-[100px] text-primary">
+                                                Picture
+                                            </TableHead>
+                                            <TableHead className="text-primary">Price</TableHead>
+                                            <TableHead className="text-primary">Status</TableHead>
+                                            <TableHead className="w-[200px] text-center text-primary">
+                                                Actions
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {/* Create Form Row */}
+                                        {showCreateForm && (
+                                            <TableRow>
+                                                <TableCell className="font-medium text-primary">
+                                                    New
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="e.g. Popcorn"
+                                                        value={formData.name}
+                                                        onChange={(e) =>
                                                             setFormData((prev) => ({
                                                                 ...prev,
-                                                                isCurrent: checked === true
+                                                                name: e.target.value
                                                             }))
                                                         }
+                                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                            formErrors.name ? 'border-red-500' : ''
+                                                        }`}
+                                                        autoFocus
                                                         disabled={isCreating}
                                                     />
-                                                    <label
-                                                        htmlFor="createIsCurrent"
-                                                        className="text-sm text-primary"
-                                                    >
-                                                        Current
-                                                    </label>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex justify-center gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={handleCreateSubmit}
-                                                        disabled={isCreating}
-                                                        className="btn-primary hover:bg-[#e86d28]"
-                                                    >
-                                                        {isCreating ? '...' : '✓'}
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={handleCancelCreate}
-                                                        disabled={isCreating}
-                                                        className="border-surface text-secondary"
-                                                    >
-                                                        ✕
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-
-                                    {/* Refreshment Rows */}
-                                    {refreshments.map((refreshment, index) => {
-                                        const isEditing = editingRefreshment?.id === refreshment.id
-
-                                        return (
-                                            <TableRow
-                                                key={refreshment.id}
-                                                className="border-surface hover:bg-brand/10"
-                                            >
-                                                <TableCell className="font-medium text-primary">
-                                                    {index + 1}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {isEditing ? (
-                                                        <>
-                                                            <Input
-                                                                type="text"
-                                                                value={editFormData.name}
-                                                                onChange={(e) =>
-                                                                    setEditFormData((prev) => ({
-                                                                        ...prev,
-                                                                        name: e.target.value
-                                                                    }))
-                                                                }
-                                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                                    editFormErrors.name
-                                                                        ? 'border-red-500'
-                                                                        : ''
-                                                                }`}
-                                                                disabled={isUpdating}
-                                                            />
-                                                            {editFormErrors.name && (
-                                                                <p className="text-red-500 text-xs mt-1">
-                                                                    {editFormErrors.name}
-                                                                </p>
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-primary font-medium">
-                                                            {refreshment.name}
-                                                        </span>
+                                                    {formErrors.name && (
+                                                        <p className="text-red-500 text-xs mt-1">
+                                                            {formErrors.name}
+                                                        </p>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {isEditing ? (
-                                                        <div className="space-y-2">
-                                                            <input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                ref={editFileInputRef}
-                                                                onChange={handleEditFileSelect}
-                                                                className="hidden"
-                                                            />
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() =>
-                                                                    editFileInputRef.current?.click()
-                                                                }
-                                                                className={
-                                                                    editFormErrors.picture
-                                                                        ? 'border-red-500'
-                                                                        : ''
-                                                                }
-                                                                disabled={isUpdating}
-                                                            >
-                                                                Choose Image
-                                                            </Button>
-                                                            {(editPreviewImage ||
-                                                                (typeof editFormData.picture ===
-                                                                    'string' &&
-                                                                    editFormData.picture)) && (
-                                                                <img
-                                                                    src={
-                                                                        editPreviewImage ||
-                                                                        (typeof editFormData.picture ===
-                                                                        'string'
-                                                                            ? editFormData.picture
-                                                                            : '')
-                                                                    }
-                                                                    alt="Preview"
-                                                                    className="w-16 h-16 object-cover rounded-md border border-surface"
-                                                                    onError={(e) => {
-                                                                        e.currentTarget.style.display =
-                                                                            'none'
-                                                                    }}
-                                                                />
-                                                            )}
-                                                            {editFormErrors.picture && (
-                                                                <p className="text-red-500 text-xs mt-1">
-                                                                    {editFormErrors.picture}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    ) : refreshment.picture ? (
-                                                        <img
-                                                            src={refreshment.picture}
-                                                            alt={refreshment.name}
-                                                            className="w-16 h-16 object-cover rounded-md border border-surface"
-                                                            onError={(e) => {
-                                                                e.currentTarget.src =
-                                                                    'https://via.placeholder.com/64?text=No+Image'
-                                                            }}
+                                                    <div className="space-y-2">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            ref={fileInputRef}
+                                                            onChange={handleFileSelect}
+                                                            className="hidden"
                                                         />
-                                                    ) : (
-                                                        <span className="text-secondary text-sm">
-                                                            No image
-                                                        </span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {isEditing ? (
-                                                        <>
-                                                            <Input
-                                                                type="number"
-                                                                min="0"
-                                                                step="1000"
-                                                                value={editFormData.price}
-                                                                onChange={(e) =>
-                                                                    setEditFormData((prev) => ({
-                                                                        ...prev,
-                                                                        price: Number(
-                                                                            e.target.value
-                                                                        )
-                                                                    }))
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                fileInputRef.current?.click()
+                                                            }
+                                                            className={
+                                                                formErrors.picture
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                            }
+                                                            disabled={isCreating}
+                                                        >
+                                                            Choose Image
+                                                        </Button>
+                                                        {(previewImage ||
+                                                            (typeof formData.picture === 'string' &&
+                                                                formData.picture)) && (
+                                                            <img
+                                                                src={
+                                                                    previewImage ||
+                                                                    (typeof formData.picture ===
+                                                                    'string'
+                                                                        ? formData.picture
+                                                                        : '')
                                                                 }
-                                                                className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                                    editFormErrors.price
-                                                                        ? 'border-red-500'
-                                                                        : ''
-                                                                }`}
-                                                                disabled={isUpdating}
-                                                            />
-                                                            {editFormErrors.price && (
-                                                                <p className="text-red-500 text-xs mt-1">
-                                                                    {editFormErrors.price}
-                                                                </p>
-                                                            )}
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-primary">
-                                                            {refreshment.price.toLocaleString(
-                                                                'vi-VN'
-                                                            )}{' '}
-                                                            ₫
-                                                        </span>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {isEditing ? (
-                                                        <div className="flex items-center space-x-2">
-                                                            <Checkbox
-                                                                id={`editIsCurrent-${refreshment.id}`}
-                                                                checked={editFormData.isCurrent}
-                                                                onCheckedChange={(checked) => {
-                                                                    console.log(
-                                                                        'Checkbox changed:',
-                                                                        checked,
-                                                                        typeof checked
-                                                                    )
-                                                                    setEditFormData((prev) => ({
-                                                                        ...prev,
-                                                                        isCurrent: checked === true
-                                                                    }))
+                                                                alt="Preview"
+                                                                className="w-16 h-16 object-cover rounded-md border border-surface"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display =
+                                                                        'none'
                                                                 }}
-                                                                disabled={isUpdating}
                                                             />
-                                                            <label
-                                                                htmlFor={`editIsCurrent-${refreshment.id}`}
-                                                                className="text-sm text-primary"
-                                                            >
-                                                                Current
-                                                            </label>
-                                                        </div>
-                                                    ) : refreshment.isCurrent ? (
-                                                        <span className="px-3 py-1 text-xs font-medium rounded-md bg-green-50 text-green-700 border border-green-200">
-                                                            Current
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-secondary text-sm">
-                                                            UnCurrent
-                                                        </span>
+                                                        )}
+                                                        {formErrors.picture && (
+                                                            <p className="text-red-500 text-xs mt-1">
+                                                                {formErrors.picture}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        type="number"
+                                                        min="0"
+                                                        step="1000"
+                                                        placeholder="50000"
+                                                        value={formData.price}
+                                                        onChange={(e) =>
+                                                            setFormData((prev) => ({
+                                                                ...prev,
+                                                                price: Number(e.target.value)
+                                                            }))
+                                                        }
+                                                        className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                            formErrors.price ? 'border-red-500' : ''
+                                                        }`}
+                                                        disabled={isCreating}
+                                                    />
+                                                    {formErrors.price && (
+                                                        <p className="text-red-500 text-xs mt-1">
+                                                            {formErrors.price}
+                                                        </p>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {isEditing ? (
-                                                        <div className="flex justify-center gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={handleSaveEdit}
-                                                                disabled={isUpdating}
-                                                                className="btn-primary hover:bg-[#e86d28]"
-                                                            >
-                                                                {isUpdating ? '...' : '✓'}
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={handleCancelEditInline}
-                                                                disabled={isUpdating}
-                                                                className="border-surface text-secondary"
-                                                            >
-                                                                ✕
-                                                            </Button>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex justify-center gap-2">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() =>
-                                                                    handleStartEdit(refreshment)
-                                                                }
-                                                                className="border-surface text-primary hover:bg-brand"
-                                                            >
-                                                                Edit
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="outline"
-                                                                onClick={() =>
-                                                                    handleDelete(refreshment)
-                                                                }
-                                                                className="border-red-200 text-red-600 hover:bg-red-50"
-                                                            >
-                                                                Delete
-                                                            </Button>
-                                                        </div>
-                                                    )}
+                                                    <div className="flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id="createIsCurrent"
+                                                            checked={formData.isCurrent}
+                                                            onCheckedChange={(checked) =>
+                                                                setFormData((prev) => ({
+                                                                    ...prev,
+                                                                    isCurrent: checked === true
+                                                                }))
+                                                            }
+                                                            disabled={isCreating}
+                                                        />
+                                                        <label
+                                                            htmlFor="createIsCurrent"
+                                                            className="text-sm text-primary"
+                                                        >
+                                                            Current
+                                                        </label>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex justify-center gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={handleCreateSubmit}
+                                                            disabled={isCreating}
+                                                            className="btn-primary hover:bg-[#e86d28]"
+                                                        >
+                                                            {isCreating ? '...' : '✓'}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={handleCancelCreate}
+                                                            disabled={isCreating}
+                                                            className="border-surface text-secondary"
+                                                        >
+                                                            ✕
+                                                        </Button>
+                                                    </div>
                                                 </TableCell>
                                             </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
+                                        )}
+
+                                        {/* Refreshment Rows */}
+                                        {refreshments.map((refreshment, index) => {
+                                            const isEditing =
+                                                editingRefreshment?.id === refreshment.id
+
+                                            return (
+                                                <TableRow
+                                                    key={refreshment.id}
+                                                    className="border-surface hover:bg-brand/10"
+                                                >
+                                                    <TableCell className="font-medium text-primary">
+                                                        {index + 1}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {isEditing ? (
+                                                            <>
+                                                                <Input
+                                                                    type="text"
+                                                                    value={editFormData.name}
+                                                                    onChange={(e) =>
+                                                                        setEditFormData((prev) => ({
+                                                                            ...prev,
+                                                                            name: e.target.value
+                                                                        }))
+                                                                    }
+                                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                                        editFormErrors.name
+                                                                            ? 'border-red-500'
+                                                                            : ''
+                                                                    }`}
+                                                                    disabled={isUpdating}
+                                                                />
+                                                                {editFormErrors.name && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.name}
+                                                                    </p>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-primary font-medium">
+                                                                {refreshment.name}
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {isEditing ? (
+                                                            <div className="space-y-2">
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    ref={editFileInputRef}
+                                                                    onChange={handleEditFileSelect}
+                                                                    className="hidden"
+                                                                />
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        editFileInputRef.current?.click()
+                                                                    }
+                                                                    className={
+                                                                        editFormErrors.picture
+                                                                            ? 'border-red-500'
+                                                                            : ''
+                                                                    }
+                                                                    disabled={isUpdating}
+                                                                >
+                                                                    Choose Image
+                                                                </Button>
+                                                                {(editPreviewImage ||
+                                                                    (typeof editFormData.picture ===
+                                                                        'string' &&
+                                                                        editFormData.picture)) && (
+                                                                    <img
+                                                                        src={
+                                                                            editPreviewImage ||
+                                                                            (typeof editFormData.picture ===
+                                                                            'string'
+                                                                                ? editFormData.picture
+                                                                                : '')
+                                                                        }
+                                                                        alt="Preview"
+                                                                        className="w-16 h-16 object-cover rounded-md border border-surface"
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.style.display =
+                                                                                'none'
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                                {editFormErrors.picture && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.picture}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ) : refreshment.picture ? (
+                                                            <img
+                                                                src={refreshment.picture}
+                                                                alt={refreshment.name}
+                                                                className="w-16 h-16 object-cover rounded-md border border-surface"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.src =
+                                                                        'https://via.placeholder.com/64?text=No+Image'
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <span className="text-secondary text-sm">
+                                                                No image
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {isEditing ? (
+                                                            <>
+                                                                <Input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="1000"
+                                                                    value={editFormData.price}
+                                                                    onChange={(e) =>
+                                                                        setEditFormData((prev) => ({
+                                                                            ...prev,
+                                                                            price: Number(
+                                                                                e.target.value
+                                                                            )
+                                                                        }))
+                                                                    }
+                                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
+                                                                        editFormErrors.price
+                                                                            ? 'border-red-500'
+                                                                            : ''
+                                                                    }`}
+                                                                    disabled={isUpdating}
+                                                                />
+                                                                {editFormErrors.price && (
+                                                                    <p className="text-red-500 text-xs mt-1">
+                                                                        {editFormErrors.price}
+                                                                    </p>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-primary">
+                                                                {refreshment.price.toLocaleString(
+                                                                    'vi-VN'
+                                                                )}{' '}
+                                                                ₫
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {isEditing ? (
+                                                            <div className="flex items-center space-x-2">
+                                                                <Checkbox
+                                                                    id={`editIsCurrent-${refreshment.id}`}
+                                                                    checked={editFormData.isCurrent}
+                                                                    onCheckedChange={(checked) => {
+                                                                        console.log(
+                                                                            'Checkbox changed:',
+                                                                            checked,
+                                                                            typeof checked
+                                                                        )
+                                                                        setEditFormData((prev) => ({
+                                                                            ...prev,
+                                                                            isCurrent:
+                                                                                checked === true
+                                                                        }))
+                                                                    }}
+                                                                    disabled={isUpdating}
+                                                                />
+                                                                <label
+                                                                    htmlFor={`editIsCurrent-${refreshment.id}`}
+                                                                    className="text-sm text-primary"
+                                                                >
+                                                                    Current
+                                                                </label>
+                                                            </div>
+                                                        ) : refreshment.isCurrent ? (
+                                                            <span className="px-3 py-1 text-xs font-medium rounded-md bg-green-50 text-green-700 border border-green-200">
+                                                                Current
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-secondary text-sm">
+                                                                UnCurrent
+                                                            </span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {isEditing ? (
+                                                            <div className="flex justify-center gap-2">
+                                                                <Button
+                                                                    size="sm"
+                                                                    onClick={handleSaveEdit}
+                                                                    disabled={isUpdating}
+                                                                    className="btn-primary hover:bg-[#e86d28]"
+                                                                >
+                                                                    {isUpdating ? '...' : '✓'}
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={handleCancelEditInline}
+                                                                    disabled={isUpdating}
+                                                                    className="border-surface text-secondary"
+                                                                >
+                                                                    ✕
+                                                                </Button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex justify-center gap-2">
+                                                                <div className="relative dropdown-container">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        onClick={() =>
+                                                                            toggleDropdown(
+                                                                                refreshment.id
+                                                                            )
+                                                                        }
+                                                                        className="border border-surface text-secondary hover:bg-brand hover:text-primary h-8 w-8 p-0 transition-colors"
+                                                                    >
+                                                                        <MoreHorizontal className="w-4 h-4" />
+                                                                    </Button>
+
+                                                                    {/* Dropdown Menu */}
+                                                                    {activeDropdown ===
+                                                                        refreshment.id && (
+                                                                        <div
+                                                                            ref={dropdownRef}
+                                                                            className="absolute right-0 top-full mt-2 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1"
+                                                                        >
+                                                                            {/* Arrow pointing to button */}
+                                                                            <div className="absolute -top-2 right-2 w-4 h-4 bg-gray-800 border-t border-l border-gray-700 transform rotate-45 z-[-1]"></div>
+
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleStartEdit(
+                                                                                        refreshment
+                                                                                    )
+                                                                                    setActiveDropdown(
+                                                                                        null
+                                                                                    )
+                                                                                }}
+                                                                                className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-blue-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                            >
+                                                                                <Edit2 className="w-4 h-4 text-blue-400" />
+                                                                                Edit
+                                                                            </button>
+                                                                            <div className="border-t border-surface my-1" />
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    handleDelete(
+                                                                                        refreshment
+                                                                                    )
+                                                                                    setActiveDropdown(
+                                                                                        null
+                                                                                    )
+                                                                                }}
+                                                                                className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                                Delete
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     )}
 

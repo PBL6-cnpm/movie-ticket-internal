@@ -18,12 +18,18 @@ import {
 } from '@/shared/components/ui/table'
 import { showDeleteConfirm } from '@/shared/utils/confirm'
 import { showToast } from '@/shared/utils/toast'
-import { useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from '@tanstack/react-router'
+import { Edit2, Eye, MoreHorizontal, Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import type { CreateRoomRequest, Room, UpdateRoomRequest } from '../types/room.type'
 
 const RoomsPage = () => {
     const navigate = useNavigate()
+    const location = useLocation()
+
+    // Determine base path (admin or super-admin)
+    const basePath = location.pathname.includes('super-admin') ? '/super-admin' : '/admin'
+
     const [rooms, setRooms] = useState<Room[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const [isCreating, setIsCreating] = useState<boolean>(false)
@@ -46,6 +52,28 @@ const RoomsPage = () => {
     // Form validation
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
     const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({})
+
+    // Dropdown state
+    const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
+    // Handle click outside dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setActiveDropdown(null)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [])
+
+    const toggleDropdown = (roomId: string) => {
+        setActiveDropdown(activeDropdown === roomId ? null : roomId)
+    }
 
     // Fetch rooms on component mount
     useEffect(() => {
@@ -413,46 +441,70 @@ const RoomsPage = () => {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center justify-center gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                navigate({
-                                                                    to: '/admin/rooms/$roomId/seats',
-                                                                    params: { roomId: room.id }
-                                                                })
-                                                            }
-                                                            className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#e86d28]/30"
-                                                            disabled={
-                                                                showCreateForm ||
-                                                                editingRoom !== null
-                                                            }
-                                                        >
-                                                            View Seats
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleEditRoom(room)}
-                                                            className="border-surface text-secondary hover:bg-brand hover:text-primary"
-                                                            disabled={
-                                                                showCreateForm ||
-                                                                editingRoom !== null
-                                                            }
-                                                        >
-                                                            Edit
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleDeleteRoom(room)}
-                                                            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                                            disabled={
-                                                                showCreateForm ||
-                                                                editingRoom !== null
-                                                            }
-                                                        >
-                                                            Delete
-                                                        </Button>
+                                                        <div className="relative dropdown-container">
+                                                            <Button
+                                                                variant="outline"
+                                                                onClick={() =>
+                                                                    toggleDropdown(room.id)
+                                                                }
+                                                                className="border border-surface text-secondary hover:bg-brand hover:text-primary h-8 w-8 p-0 transition-colors"
+                                                                disabled={
+                                                                    showCreateForm ||
+                                                                    editingRoom !== null
+                                                                }
+                                                            >
+                                                                <MoreHorizontal className="w-4 h-4" />
+                                                            </Button>
+
+                                                            {/* Dropdown Menu */}
+                                                            {activeDropdown === room.id && (
+                                                                <div
+                                                                    ref={dropdownRef}
+                                                                    className="absolute right-0 top-full mt-2 w-40 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 py-1"
+                                                                >
+                                                                    {/* Arrow pointing to button */}
+                                                                    <div className="absolute -top-2 right-2 w-4 h-4 bg-gray-800 border-t border-l border-gray-700 transform rotate-45 z-[-1]"></div>
+
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            navigate({
+                                                                                to: `${basePath}/rooms/$roomId/seats`,
+                                                                                params: {
+                                                                                    roomId: room.id
+                                                                                }
+                                                                            })
+                                                                            setActiveDropdown(null)
+                                                                        }}
+                                                                        className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-green-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                    >
+                                                                        <Eye className="w-4 h-4 text-green-400" />
+                                                                        View Seats
+                                                                    </button>
+                                                                    <div className="border-t border-surface my-1" />
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            handleEditRoom(room)
+                                                                            setActiveDropdown(null)
+                                                                        }}
+                                                                        className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-blue-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                    >
+                                                                        <Edit2 className="w-4 h-4 text-blue-400" />
+                                                                        Edit
+                                                                    </button>
+                                                                    <div className="border-t border-surface my-1" />
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            handleDeleteRoom(room)
+                                                                            setActiveDropdown(null)
+                                                                        }}
+                                                                        className="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>

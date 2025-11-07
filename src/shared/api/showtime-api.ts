@@ -17,6 +17,20 @@ export const getShowTimesByDate = async (date: string): Promise<ShowTimeResponse
     }
 }
 
+// Get show times by date and movie
+export const getShowTimesByDateAndMovie = async (
+    date: string,
+    movieId: string
+): Promise<ShowTimeResponse> => {
+    try {
+        const response = await apiClient.get(`/show-time/date/${date}/movie/${movieId}`)
+        return response.data
+    } catch (error) {
+        console.error('Error fetching show times by date and movie:', error)
+        throw error
+    }
+}
+
 // Create new show time
 export const createShowTime = async (
     data: CreateShowTimeRequest

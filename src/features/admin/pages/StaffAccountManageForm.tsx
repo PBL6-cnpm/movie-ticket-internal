@@ -61,7 +61,6 @@ export default function StaffAccountManageForm() {
 
     // Edit form state
     const [editFormData, setEditFormData] = useState<FormData>(initialFormData)
-    const [editFormErrors, setEditFormErrors] = useState<FormErrors>({})
     const [isUpdating, setIsUpdating] = useState(false)
 
     // Pagination
@@ -180,25 +179,15 @@ export default function StaffAccountManageForm() {
             phoneNumber: account.phoneNumber,
             status: account.status
         })
-        setEditFormErrors({})
     }
 
     const handleCancelEditInline = () => {
         setEditingAccount(null)
         setEditFormData(initialFormData)
-        setEditFormErrors({})
     }
 
     const handleSaveEdit = async () => {
         if (!editingAccount) return
-
-        const errors = validateForm(editFormData)
-        setEditFormErrors(errors)
-
-        if (Object.keys(errors).length > 0) {
-            showToast.error('Please fix the validation errors')
-            return
-        }
 
         try {
             setIsUpdating(true)
@@ -261,7 +250,6 @@ export default function StaffAccountManageForm() {
                                     <TableRow>
                                         <TableHead className="text-center">#</TableHead>
                                         <TableHead className="text-center">Email</TableHead>
-                                        <TableHead className="text-center">Password</TableHead>
                                         <TableHead className="text-center">Full Name</TableHead>
                                         <TableHead className="text-center">Phone</TableHead>
                                         <TableHead className="text-center">Status</TableHead>
@@ -292,28 +280,6 @@ export default function StaffAccountManageForm() {
                                                 {formErrors.email && (
                                                     <p className="text-red-500 text-xs mt-1">
                                                         {formErrors.email}
-                                                    </p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input
-                                                    type="password"
-                                                    placeholder="Password"
-                                                    value={formData.password}
-                                                    onChange={(e) =>
-                                                        setFormData({
-                                                            ...formData,
-                                                            password: e.target.value
-                                                        })
-                                                    }
-                                                    className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                        formErrors.password ? 'border-red-500' : ''
-                                                    }`}
-                                                    disabled={isCreating}
-                                                />
-                                                {formErrors.password && (
-                                                    <p className="text-red-500 text-xs mt-1">
-                                                        {formErrors.password}
                                                     </p>
                                                 )}
                                             </TableCell>
@@ -395,119 +361,13 @@ export default function StaffAccountManageForm() {
                                                 {(currentPage - 1) * pageSize + index + 1}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                {isEditing(account.id) ? (
-                                                    <div>
-                                                        <Input
-                                                            type="email"
-                                                            value={editFormData.email}
-                                                            onChange={(e) =>
-                                                                setEditFormData((prev) => ({
-                                                                    ...prev,
-                                                                    email: e.target.value
-                                                                }))
-                                                            }
-                                                            className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                                editFormErrors.email
-                                                                    ? 'border-red-500'
-                                                                    : ''
-                                                            }`}
-                                                            disabled={isUpdating}
-                                                        />
-                                                        {editFormErrors.email && (
-                                                            <p className="text-red-500 text-xs mt-1">
-                                                                {editFormErrors.email}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    account.email
-                                                )}
+                                                {account.email}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                {isEditing(account.id) ? (
-                                                    <div>
-                                                        <Input
-                                                            type="password"
-                                                            placeholder="Leave blank to keep current"
-                                                            value={editFormData.password}
-                                                            onChange={(e) =>
-                                                                setEditFormData((prev) => ({
-                                                                    ...prev,
-                                                                    password: e.target.value
-                                                                }))
-                                                            }
-                                                            className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                                editFormErrors.password
-                                                                    ? 'border-red-500'
-                                                                    : ''
-                                                            }`}
-                                                            disabled={isUpdating}
-                                                        />
-                                                        {editFormErrors.password && (
-                                                            <p className="text-red-500 text-xs mt-1">
-                                                                {editFormErrors.password}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-gray-400">••••••</span>
-                                                )}
+                                                {account.fullName}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                {isEditing(account.id) ? (
-                                                    <div>
-                                                        <Input
-                                                            value={editFormData.fullName}
-                                                            onChange={(e) =>
-                                                                setEditFormData((prev) => ({
-                                                                    ...prev,
-                                                                    fullName: e.target.value
-                                                                }))
-                                                            }
-                                                            className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                                editFormErrors.fullName
-                                                                    ? 'border-red-500'
-                                                                    : ''
-                                                            }`}
-                                                            disabled={isUpdating}
-                                                        />
-                                                        {editFormErrors.fullName && (
-                                                            <p className="text-red-500 text-xs mt-1">
-                                                                {editFormErrors.fullName}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    account.fullName
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                {isEditing(account.id) ? (
-                                                    <div>
-                                                        <Input
-                                                            value={editFormData.phoneNumber}
-                                                            onChange={(e) =>
-                                                                setEditFormData((prev) => ({
-                                                                    ...prev,
-                                                                    phoneNumber: e.target.value
-                                                                }))
-                                                            }
-                                                            className={`bg-brand border-surface text-primary placeholder:text-secondary ${
-                                                                editFormErrors.phoneNumber
-                                                                    ? 'border-red-500'
-                                                                    : ''
-                                                            }`}
-                                                            disabled={isUpdating}
-                                                        />
-                                                        {editFormErrors.phoneNumber && (
-                                                            <p className="text-red-500 text-xs mt-1">
-                                                                {editFormErrors.phoneNumber}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    account.phoneNumber
-                                                )}
+                                                {account.phoneNumber}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {isEditing(account.id) ? (
