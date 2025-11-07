@@ -2,6 +2,7 @@ import {
     adminRoomsRoute,
     adminRoute,
     adminSeatsRoute,
+    adminShowTimeDetailRoute,
     adminShowTimesRoute,
     adminStaffAccountsRoute
 } from './features/admin/routes'
@@ -17,8 +18,13 @@ import {
     moviesManageRoute,
     refreshmentManageRoute,
     roleManageRoute,
+    superAdminRoomsRoute,
     superAdminRoute,
+    superAdminSeatsRoute,
+    superAdminShowTimeDetailRoute,
+    superAdminShowTimesRoute,
     superAdminSpecialDateRoute,
+    superAdminStaffAccountsRoute,
     superAdminTypeDayRoute,
     typeSeatManageRoute
 } from './features/super-admin/routes'
@@ -41,10 +47,16 @@ export const routeTree = rootRoute.addChildren([
     typeSeatManageRoute,
     superAdminTypeDayRoute,
     superAdminSpecialDateRoute,
+    superAdminRoomsRoute,
+    superAdminSeatsRoute,
+    superAdminShowTimesRoute,
+    superAdminShowTimeDetailRoute,
+    superAdminStaffAccountsRoute,
     refreshmentManageRoute,
     adminRoute,
     adminRoomsRoute,
     adminSeatsRoute,
     adminShowTimesRoute,
+    adminShowTimeDetailRoute,
     adminStaffAccountsRoute
 ])
