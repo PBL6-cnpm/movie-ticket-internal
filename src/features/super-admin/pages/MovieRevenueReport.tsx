@@ -1,4 +1,4 @@
-import { getRevenueByMovie } from '@/shared/api/report-api'
+import { getRevenueByMovie, getRevenueByTime } from '@/shared/api/report-api'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { showToast } from '@/shared/utils/toast'
 import { useQuery } from '@tanstack/react-query'
@@ -16,14 +16,25 @@ import {
     XAxis,
     YAxis
 } from 'recharts'
-import type { MovieRevenue } from '../types/report.types'
+import type { MovieRevenue, RevenueByTime } from '../types/report.types'
 
 // A vibrant and distinct color palette for charts
 const COLORS = ['#e86d28', '#d35f1a', '#f6a564', '#f0c9a0', '#8fbcd4', '#a3d3a2']
 
-// Formatter for currency, ensuring consistent display
+// Formatter for currency, ensuring consistent display in VNĐ
 const formatCurrency = (value: number) =>
-    value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+    value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
+
+// Formatter for Y-axis in VNĐ, making large numbers readable
+const formatAxisVND = (tickItem: number) => {
+    if (tickItem >= 1000000) {
+        return `${tickItem / 1000000} Tr`
+    }
+    if (tickItem >= 1000) {
+        return `${tickItem / 1000} k`
+    }
+    return tickItem.toString()
+}
 
 const MovieRevenueReport: React.FC = () => {
     // Default date range to the last 30 days for immediate, relevant data
@@ -37,9 +48,11 @@ const MovieRevenueReport: React.FC = () => {
 
     const [startDate, setStartDate] = useState<string>(defaultStart)
     const [endDate, setEndDate] = useState<string>(defaultEnd)
+    const [viewMode, setViewMode] = useState<'movie' | 'time'>('movie')
+    const [groupBy, setGroupBy] = useState<'day' | 'month' | 'quarter' | 'year'>('month')
 
     const { data, isLoading, error } = useQuery({
-        queryKey: ['reports', 'movies', startDate, endDate],
+        queryKey: ['reports', 'movies', startDate, endDate, viewMode],
         queryFn: async (): Promise<MovieRevenue[]> => {
             if (startDate && endDate && startDate > endDate) {
                 showToast.error('Start date must be before or equal to end date')
@@ -47,8 +60,25 @@ const MovieRevenueReport: React.FC = () => {
             }
             return getRevenueByMovie({ startDate, endDate })
         },
-        // Keep data fresh but avoid excessive refetching
-        staleTime: 1000 * 60 * 5
+        staleTime: 1000 * 60 * 5,
+        enabled: viewMode === 'movie'
+    })
+
+    const {
+        data: timeData,
+        isLoading: isTimeLoading,
+        error: timeError
+    } = useQuery({
+        queryKey: ['reports', 'time', groupBy, startDate, endDate],
+        queryFn: async (): Promise<RevenueByTime[]> => {
+            if (startDate && endDate && startDate > endDate) {
+                showToast.error('Start date must be before or equal to end date')
+                return []
+            }
+            return getRevenueByTime({ groupBy, startDate, endDate })
+        },
+        staleTime: 1000 * 60 * 5,
+        enabled: viewMode === 'time'
     })
 
     // Memoize chart data processing to prevent re-renders
@@ -56,11 +86,9 @@ const MovieRevenueReport: React.FC = () => {
         const movies = data || []
         if (movies.length === 0) return []
 
-        // Sort by revenue to identify top performers
         const sortedMovies = [...movies].sort((a, b) => b.totalRevenue - a.totalRevenue)
         const top5 = sortedMovies.slice(0, 5)
 
-        // Aggregate the rest into an 'Others' category for cleaner charts
         const others = sortedMovies.slice(5)
         if (others.length > 0) {
             const othersRevenue = others.reduce((acc, cur) => acc + cur.totalRevenue, 0)
@@ -81,7 +109,6 @@ const MovieRevenueReport: React.FC = () => {
         return top5
     }, [data])
 
-    // Prepare data specifically for the charts
     const barData = topMoviesData.map((m) => ({ name: m.movieName, Revenue: m.totalRevenue }))
     const pieData = topMoviesData.map((m) => ({ name: m.movieName, Bookings: m.totalBookings }))
     const movies = data || []
@@ -89,14 +116,28 @@ const MovieRevenueReport: React.FC = () => {
     return (
         <div className="min-h-screen space-y-6 p-6">
             <div>
-                <h1 className="text-3xl font-bold text-white">Revenue by Movie</h1>
+                <h1 className="text-3xl font-bold text-white">
+                    {viewMode === 'movie' ? 'Revenue by Movie' : 'Revenue by Time'}
+                </h1>
                 <p className="text-gray-400 mt-1">
-                    Statistics of revenue and number of bookings per movie
+                    {viewMode === 'movie'
+                        ? 'Statistics of revenue and number of bookings per movie'
+                        : 'Revenue statistics grouped by selected time period'}
                 </p>
             </div>
 
             <div className="flex items-center justify-between">
-                <div>
+                <div className="flex items-center">
+                    <label className="text-sm text-gray-300 mr-2">View</label>
+                    <select
+                        value={viewMode}
+                        onChange={(e) => setViewMode(e.target.value as 'movie' | 'time')}
+                        className="mr-4 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white"
+                    >
+                        <option value="movie">By Movie</option>
+                        <option value="time">By Time</option>
+                    </select>
+
                     <label className="text-sm text-gray-300 mr-2">Start Date</label>
                     <input
                         type="date"
@@ -113,33 +154,141 @@ const MovieRevenueReport: React.FC = () => {
                         className="mr-4 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white"
                     />
 
+                    {viewMode === 'time' && (
+                        <>
+                            <label className="text-sm text-gray-300 mr-2">Group By</label>
+                            <select
+                                value={groupBy}
+                                onChange={(e) =>
+                                    setGroupBy(
+                                        e.target.value as 'day' | 'month' | 'quarter' | 'year'
+                                    )
+                                }
+                                className="mr-4 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm text-white"
+                            >
+                                <option value="day">Day</option>
+                                <option value="month">Month</option>
+                                <option value="quarter">Quarter</option>
+                                <option value="year">Year</option>
+                            </select>
+                        </>
+                    )}
+
                     <button
                         onClick={() => {
                             if (startDate && endDate && startDate > endDate) {
                                 showToast.error('Start date must be before or equal to end date')
                                 return
                             }
-                            // No need to call refetch manually, query key change does it
                             showToast.success('Filters applied successfully')
                         }}
                         className="bg-[#e86d28] hover:bg-[#d35f1a] text-white px-3 py-1 rounded text-sm"
                     >
                         Apply
                     </button>
-
-                    <button
-                        onClick={() => {
-                            setStartDate(defaultStart)
-                            setEndDate(defaultEnd)
-                        }}
-                        className="ml-2 bg-gray-700 border border-gray-600 text-gray-200 px-3 py-1 rounded text-sm"
-                    >
-                        Reset
-                    </button>
                 </div>
             </div>
 
-            {isLoading ? (
+            {viewMode === 'time' ? (
+                isTimeLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#e86d28]" />
+                        <span className="ml-2 text-gray-400">Loading report...</span>
+                    </div>
+                ) : timeError ? (
+                    <Card className="bg-gray-800/50 border-gray-700">
+                        <CardContent>
+                            <div className="text-red-400">
+                                Error loading time-based report. Please try again later.
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <>
+                        <Card className="bg-gray-800/50 border-gray-700">
+                            <CardContent>
+                                <h2 className="text-xl font-semibold text-white mb-4">
+                                    Revenue by {groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}
+                                </h2>
+                                <div style={{ width: '100%', height: 340 }}>
+                                    <ResponsiveContainer>
+                                        <BarChart
+                                            data={(timeData || []).map((t) => ({
+                                                name: t.period,
+                                                Revenue: t.totalRevenue
+                                            }))}
+                                            margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                                        >
+                                            <XAxis dataKey="name" stroke="#cbd5e1" fontSize={12} />
+                                            <YAxis
+                                                stroke="#cbd5e1"
+                                                fontSize={12}
+                                                tickFormatter={formatAxisVND}
+                                            />
+                                            <Tooltip
+                                                formatter={(value: number) => formatCurrency(value)}
+                                                cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+                                            />
+                                            <Bar dataKey="Revenue" fill="#e86d28" />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* --- START: BẢNG CHI TIẾT ĐÃ ĐƯỢC BỔ SUNG --- */}
+                        <Card className="bg-gray-800/50 border-gray-700">
+                            <CardContent>
+                                <h2 className="text-xl font-semibold text-white mb-4">
+                                    Detailed List
+                                </h2>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-700/50">
+                                            <tr>
+                                                <th className="text-left py-3 px-4 text-gray-300">
+                                                    Period
+                                                </th>
+                                                <th className="text-right py-3 px-4 text-gray-300">
+                                                    Revenue
+                                                </th>
+                                                <th className="text-right py-3 px-4 text-gray-300">
+                                                    Bookings
+                                                </th>
+                                                <th className="text-right py-3 px-4 text-gray-300">
+                                                    Total Seats
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {(timeData || []).map((t) => (
+                                                <tr
+                                                    key={t.period}
+                                                    className="border-b border-gray-700/50 hover:bg-gray-700/30"
+                                                >
+                                                    <td className="py-3 px-4 text-white max-w-[420px]">
+                                                        {t.period}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right text-gray-200">
+                                                        {formatCurrency(t.totalRevenue)}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right text-gray-200">
+                                                        {t.totalBookings}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right text-gray-200">
+                                                        {t.totalSeats}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        {/* --- END: KẾT THÚC PHẦN BỔ SUNG --- */}
+                    </>
+                )
+            ) : isLoading ? (
                 <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-[#e86d28]" />
                     <span className="ml-2 text-gray-400">Loading report...</span>
@@ -158,7 +307,7 @@ const MovieRevenueReport: React.FC = () => {
                         <Card className="bg-gray-800/50 border-gray-700">
                             <CardContent>
                                 <h2 className="text-xl font-semibold text-white mb-4">
-                                    Revenue by Movie (Top 5)
+                                    Top 5 Revenue Movie
                                 </h2>
                                 <div style={{ width: '100%', height: 340 }}>
                                     <ResponsiveContainer>
@@ -170,9 +319,7 @@ const MovieRevenueReport: React.FC = () => {
                                             <YAxis
                                                 stroke="#cbd5e1"
                                                 fontSize={12}
-                                                tickFormatter={(value) =>
-                                                    `$${Number(value) / 1000}K`
-                                                }
+                                                tickFormatter={formatAxisVND}
                                             />
                                             <Tooltip
                                                 formatter={(value: number) => formatCurrency(value)}
@@ -188,7 +335,7 @@ const MovieRevenueReport: React.FC = () => {
                         <Card className="bg-gray-800/50 border-gray-700">
                             <CardContent>
                                 <h2 className="text-xl font-semibold text-white mb-4">
-                                    Bookings by Movie (Top 5)
+                                    Bookings by Top 5 Revenue Movies
                                 </h2>
                                 <div style={{ width: '100%', height: 340 }}>
                                     <ResponsiveContainer>
@@ -207,7 +354,6 @@ const MovieRevenueReport: React.FC = () => {
                                                     />
                                                 ))}
                                             </Pie>
-                                            {/* <Tooltip formatter={(value: number) => `${value} bookings`} /> */}
                                             <Tooltip
                                                 formatter={(value: number) => `${value} bookings`}
                                             />
@@ -216,7 +362,6 @@ const MovieRevenueReport: React.FC = () => {
                                                 verticalAlign="middle"
                                                 align="right"
                                             />
-                                            <Legend />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
