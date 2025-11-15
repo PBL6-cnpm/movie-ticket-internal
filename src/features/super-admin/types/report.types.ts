@@ -13,3 +13,18 @@ export interface MovieRevenueApiResponse {
     code: string
     data: MovieRevenue[]
 }
+
+export interface RevenueByTime {
+    period: string
+    totalRevenue: number
+    totalBookings: number
+    totalSeats: number
+}
+
+export interface RevenueByTimeApiResponse {
+    success: boolean
+    statusCode: number
+    message: string
+    code: string
+    data: RevenueByTime[]
+}
