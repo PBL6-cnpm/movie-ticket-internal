@@ -5,9 +5,9 @@ import EmployeeDashboard from '../components/EmployeeDashboard'
 
 export const employeeRoute = createRoute({
     getParentRoute: () => rootRoute,
-    path: '/employee',
+    path: '/staff',
     component: () => (
-        <ProtectedRoute requiredRoles={['employee']}>
+        <ProtectedRoute requiredRoles={['staff']}>
             <EmployeeDashboard />
         </ProtectedRoute>
     )

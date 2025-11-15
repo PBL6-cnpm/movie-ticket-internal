@@ -11,6 +11,7 @@ import { homeRoute, loginRoute } from './features/auth/routes/Login'
 import { registerRoute } from './features/auth/routes/Register'
 import { emailVerificationSuccessRoute } from './features/auth/routes/RequireEmailVerification'
 import { verifyEmailSuccessRoute } from './features/auth/routes/VerifyEmailSuccess'
+import { employeeRoute } from './features/employee/dashboard/routes/EmployeeRoute'
 import {
     adminAccountManageRoute,
     branchManageRoute,
@@ -58,5 +59,6 @@ export const routeTree = rootRoute.addChildren([
     adminSeatsRoute,
     adminShowTimesRoute,
     adminShowTimeDetailRoute,
-    adminStaffAccountsRoute
+    adminStaffAccountsRoute,
+    employeeRoute
 ])
