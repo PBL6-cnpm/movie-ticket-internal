@@ -398,6 +398,16 @@ const ShowTimePage = () => {
 
     const [formErrors, setFormErrors] = useState<Record<string, string>>({})
     const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({})
+    const [groupBy, setGroupBy] = useState<'movie' | 'room'>(() => {
+        // Load from localStorage on initial render
+        const saved = localStorage.getItem('showtimeGroupBy')
+        return (saved === 'room' ? 'room' : 'movie') as 'movie' | 'room'
+    })
+
+    // Save groupBy selection to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('showtimeGroupBy', groupBy)
+    }, [groupBy])
 
     // Fetch initial data
     useEffect(() => {
@@ -685,10 +695,30 @@ const ShowTimePage = () => {
                 <Card className="border-0 shadow-none">
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>
-                                Showtimes for {formatDate(selectedDate)} ({showTimes.length}{' '}
-                                sessions)
-                            </CardTitle>
+                            <div className="flex items-center gap-4">
+                                <CardTitle>
+                                    Showtimes for {formatDate(selectedDate)} ({showTimes.length}{' '}
+                                    sessions)
+                                </CardTitle>
+                                <div className="flex items-center gap-2 border rounded-md p-1">
+                                    <Button
+                                        size="sm"
+                                        variant={groupBy === 'movie' ? 'default' : 'ghost'}
+                                        onClick={() => setGroupBy('movie')}
+                                        className="h-7 text-xs"
+                                    >
+                                        Group by Movie
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant={groupBy === 'room' ? 'default' : 'ghost'}
+                                        onClick={() => setGroupBy('room')}
+                                        className="h-7 text-xs"
+                                    >
+                                        Group by Room
+                                    </Button>
+                                </div>
+                            </div>
                             <Button
                                 onClick={() => {
                                     setShowCreateForm(!showCreateForm)
@@ -720,7 +750,9 @@ const ShowTimePage = () => {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead className="w-[60px]">No.</TableHead>
-                                                <TableHead>Movie</TableHead>
+                                                <TableHead>
+                                                    {groupBy === 'movie' ? 'Movie' : 'Room'}
+                                                </TableHead>
                                                 <TableHead>Showtimes</TableHead>
                                                 <TableHead className="text-center">
                                                     Actions
@@ -851,282 +883,574 @@ const ShowTimePage = () => {
                                                 </TableRow>
                                             )}
 
-                                            {/* Group showtimes by movie */}
+                                            {/* Group showtimes by movie or room */}
                                             {(() => {
-                                                // Group showtimes by movieId
-                                                const groupedByMovie = showTimes.reduce(
-                                                    (
-                                                        acc: Record<
-                                                            string,
-                                                            {
-                                                                movie: ShowTime['movie']
-                                                                showtimes: ShowTime[]
+                                                if (groupBy === 'movie') {
+                                                    // Group showtimes by movieId
+                                                    const groupedByMovie = showTimes.reduce(
+                                                        (
+                                                            acc: Record<
+                                                                string,
+                                                                {
+                                                                    movie: ShowTime['movie']
+                                                                    showtimes: ShowTime[]
+                                                                }
+                                                            >,
+                                                            showTime
+                                                        ) => {
+                                                            const movieId = showTime.movie.id
+                                                            if (!acc[movieId]) {
+                                                                acc[movieId] = {
+                                                                    movie: showTime.movie,
+                                                                    showtimes: []
+                                                                }
                                                             }
-                                                        >,
-                                                        showTime
-                                                    ) => {
-                                                        const movieId = showTime.movie.id
-                                                        if (!acc[movieId]) {
-                                                            acc[movieId] = {
-                                                                movie: showTime.movie,
-                                                                showtimes: []
-                                                            }
-                                                        }
-                                                        acc[movieId].showtimes.push(showTime)
-                                                        return acc
-                                                    },
-                                                    {}
-                                                )
-
-                                                // Convert to array and sort by movie name
-                                                const movieGroups = Object.values(
-                                                    groupedByMovie
-                                                ).sort((a, b) =>
-                                                    a.movie.name.localeCompare(b.movie.name)
-                                                )
-
-                                                return movieGroups.map((group, groupIndex) => {
-                                                    // Sort showtimes within each group by time
-                                                    const sortedShowtimes = group.showtimes.sort(
-                                                        (a, b) =>
-                                                            new Date(a.timeStart).getTime() -
-                                                            new Date(b.timeStart).getTime()
+                                                            acc[movieId].showtimes.push(showTime)
+                                                            return acc
+                                                        },
+                                                        {}
                                                     )
 
-                                                    // Check if any showtime in this group is being edited
-                                                    const editingShowtimeInGroup =
-                                                        sortedShowtimes.find(
-                                                            (st) => editingShowTime?.id === st.id
-                                                        )
+                                                    // Convert to array and sort by movie name
+                                                    const movieGroups = Object.values(
+                                                        groupedByMovie
+                                                    ).sort((a, b) =>
+                                                        a.movie.name.localeCompare(b.movie.name)
+                                                    )
 
-                                                    return (
-                                                        <TableRow
-                                                            key={group.movie.id}
-                                                            className={
-                                                                editingShowtimeInGroup
-                                                                    ? 'bg-brand/10'
-                                                                    : ''
-                                                            }
-                                                        >
-                                                            <TableCell className="font-medium">
-                                                                {groupIndex + 1}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <div className="flex items-center gap-3">
-                                                                    <img
-                                                                        src={group.movie.poster}
-                                                                        alt={group.movie.name}
-                                                                        className="w-10 h-14 object-cover rounded shadow-sm"
-                                                                    />
-                                                                    <span className="font-medium">
-                                                                        {group.movie.name}
-                                                                    </span>
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <div className="grid grid-cols-3 gap-2">
-                                                                    {sortedShowtimes.map(
-                                                                        (showTime) => {
-                                                                            const isEditing =
-                                                                                editingShowTime?.id ===
-                                                                                showTime.id
+                                                    return movieGroups.map((group, groupIndex) => {
+                                                        // Sort showtimes within each group by time
+                                                        const sortedShowtimes =
+                                                            group.showtimes.sort(
+                                                                (a, b) =>
+                                                                    new Date(
+                                                                        a.timeStart
+                                                                    ).getTime() -
+                                                                    new Date(b.timeStart).getTime()
+                                                            )
 
-                                                                            if (isEditing) {
+                                                        // Check if any showtime in this group is being edited
+                                                        const editingShowtimeInGroup =
+                                                            sortedShowtimes.find(
+                                                                (st) =>
+                                                                    editingShowTime?.id === st.id
+                                                            )
+
+                                                        return (
+                                                            <TableRow
+                                                                key={group.movie.id}
+                                                                className={
+                                                                    editingShowtimeInGroup
+                                                                        ? 'bg-brand/10'
+                                                                        : ''
+                                                                }
+                                                            >
+                                                                <TableCell className="font-medium">
+                                                                    {groupIndex + 1}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <img
+                                                                            src={group.movie.poster}
+                                                                            alt={group.movie.name}
+                                                                            className="w-10 h-14 object-cover rounded shadow-sm"
+                                                                        />
+                                                                        <span className="font-medium">
+                                                                            {group.movie.name}
+                                                                        </span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="grid grid-cols-3 gap-2">
+                                                                        {sortedShowtimes.map(
+                                                                            (showTime) => {
+                                                                                const isEditing =
+                                                                                    editingShowTime?.id ===
+                                                                                    showTime.id
+
+                                                                                if (isEditing) {
+                                                                                    return (
+                                                                                        <div
+                                                                                            key={
+                                                                                                showTime.id
+                                                                                            }
+                                                                                            className="inline-flex items-center gap-2 bg-brand/20 border border-brand px-3 py-1.5 rounded-md"
+                                                                                        >
+                                                                                            <div className="space-y-1">
+                                                                                                <Select
+                                                                                                    value={
+                                                                                                        editFormData.roomId
+                                                                                                    }
+                                                                                                    onValueChange={(
+                                                                                                        value
+                                                                                                    ) =>
+                                                                                                        setEditFormData(
+                                                                                                            {
+                                                                                                                ...editFormData,
+                                                                                                                roomId: value
+                                                                                                            }
+                                                                                                        )
+                                                                                                    }
+                                                                                                >
+                                                                                                    <SelectTrigger className="h-8 w-28">
+                                                                                                        <SelectValue placeholder="Room" />
+                                                                                                    </SelectTrigger>
+                                                                                                    <SelectContent className="bg-background/95 backdrop-blur-sm border-border">
+                                                                                                        {rooms.map(
+                                                                                                            (
+                                                                                                                room
+                                                                                                            ) => (
+                                                                                                                <SelectItem
+                                                                                                                    key={
+                                                                                                                        room.id
+                                                                                                                    }
+                                                                                                                    value={
+                                                                                                                        room.id
+                                                                                                                    }
+                                                                                                                    className="bg-background hover:bg-accent focus:bg-accent"
+                                                                                                                >
+                                                                                                                    {
+                                                                                                                        room.name
+                                                                                                                    }
+                                                                                                                </SelectItem>
+                                                                                                            )
+                                                                                                        )}
+                                                                                                    </SelectContent>
+                                                                                                </Select>
+                                                                                                {editFormErrors.roomId && (
+                                                                                                    <p className="text-xs text-red-500">
+                                                                                                        {
+                                                                                                            editFormErrors.roomId
+                                                                                                        }
+                                                                                                    </p>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <span className="text-muted-foreground">
+                                                                                                -
+                                                                                            </span>
+                                                                                            <div className="space-y-1">
+                                                                                                <Input
+                                                                                                    type="time"
+                                                                                                    value={formatTimeForInput(
+                                                                                                        editFormData.timeStart ||
+                                                                                                            new Date()
+                                                                                                    )}
+                                                                                                    onChange={(
+                                                                                                        e: React.ChangeEvent<HTMLInputElement>
+                                                                                                    ) => {
+                                                                                                        const [
+                                                                                                            hours,
+                                                                                                            minutes
+                                                                                                        ] =
+                                                                                                            e.target.value.split(
+                                                                                                                ':'
+                                                                                                            )
+                                                                                                        const newDate =
+                                                                                                            new Date(
+                                                                                                                editFormData.timeStart ||
+                                                                                                                    new Date()
+                                                                                                            )
+                                                                                                        newDate.setHours(
+                                                                                                            parseInt(
+                                                                                                                hours
+                                                                                                            )
+                                                                                                        )
+                                                                                                        newDate.setMinutes(
+                                                                                                            parseInt(
+                                                                                                                minutes
+                                                                                                            )
+                                                                                                        )
+                                                                                                        setEditFormData(
+                                                                                                            {
+                                                                                                                ...editFormData,
+                                                                                                                timeStart:
+                                                                                                                    newDate
+                                                                                                            }
+                                                                                                        )
+                                                                                                    }}
+                                                                                                    className="h-8 w-24"
+                                                                                                />
+                                                                                                {editFormErrors.timeStart && (
+                                                                                                    <p className="text-xs text-red-500">
+                                                                                                        {
+                                                                                                            editFormErrors.timeStart
+                                                                                                        }
+                                                                                                    </p>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <div className="flex gap-1">
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    onClick={(
+                                                                                                        e
+                                                                                                    ) => {
+                                                                                                        e.preventDefault()
+                                                                                                        handleUpdateShowTime(
+                                                                                                            e
+                                                                                                        )
+                                                                                                    }}
+                                                                                                    disabled={
+                                                                                                        isUpdating
+                                                                                                    }
+                                                                                                    className="h-7 w-7 p-0 bg-[#e86d28] hover:bg-[#d35f1a] text-white"
+                                                                                                >
+                                                                                                    ✓
+                                                                                                </Button>
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant="outline"
+                                                                                                    onClick={() => {
+                                                                                                        setEditingShowTime(
+                                                                                                            null
+                                                                                                        )
+                                                                                                        setEditFormErrors(
+                                                                                                            {}
+                                                                                                        )
+                                                                                                    }}
+                                                                                                    disabled={
+                                                                                                        isUpdating
+                                                                                                    }
+                                                                                                    className="h-7 w-7 p-0"
+                                                                                                >
+                                                                                                    ✕
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )
+                                                                                }
+
                                                                                 return (
                                                                                     <div
                                                                                         key={
                                                                                             showTime.id
                                                                                         }
-                                                                                        className="inline-flex items-center gap-2 bg-brand/20 border border-brand px-3 py-1.5 rounded-md"
+                                                                                        className="inline-flex items-center gap-2 bg-accent/50 border border-border px-3 py-1.5 rounded-md hover:bg-accent transition-colors"
                                                                                     >
-                                                                                        <div className="space-y-1">
-                                                                                            <Select
-                                                                                                value={
-                                                                                                    editFormData.roomId
-                                                                                                }
-                                                                                                onValueChange={(
-                                                                                                    value
-                                                                                                ) =>
-                                                                                                    setEditFormData(
-                                                                                                        {
-                                                                                                            ...editFormData,
-                                                                                                            roomId: value
-                                                                                                        }
-                                                                                                    )
-                                                                                                }
-                                                                                            >
-                                                                                                <SelectTrigger className="h-8 w-28">
-                                                                                                    <SelectValue placeholder="Room" />
-                                                                                                </SelectTrigger>
-                                                                                                <SelectContent className="bg-background/95 backdrop-blur-sm border-border">
-                                                                                                    {rooms.map(
-                                                                                                        (
-                                                                                                            room
-                                                                                                        ) => (
-                                                                                                            <SelectItem
-                                                                                                                key={
-                                                                                                                    room.id
-                                                                                                                }
-                                                                                                                value={
-                                                                                                                    room.id
-                                                                                                                }
-                                                                                                                className="bg-background hover:bg-accent focus:bg-accent"
-                                                                                                            >
-                                                                                                                {
-                                                                                                                    room.name
-                                                                                                                }
-                                                                                                            </SelectItem>
-                                                                                                        )
-                                                                                                    )}
-                                                                                                </SelectContent>
-                                                                                            </Select>
-                                                                                            {editFormErrors.roomId && (
-                                                                                                <p className="text-xs text-red-500">
-                                                                                                    {
-                                                                                                        editFormErrors.roomId
-                                                                                                    }
-                                                                                                </p>
-                                                                                            )}
-                                                                                        </div>
+                                                                                        <span className="text-sm font-medium">
+                                                                                            {showTime
+                                                                                                .room
+                                                                                                ?.name ||
+                                                                                                'N/A'}
+                                                                                        </span>
                                                                                         <span className="text-muted-foreground">
                                                                                             -
                                                                                         </span>
-                                                                                        <div className="space-y-1">
-                                                                                            <Input
-                                                                                                type="time"
-                                                                                                value={formatTimeForInput(
-                                                                                                    editFormData.timeStart ||
-                                                                                                        new Date()
-                                                                                                )}
-                                                                                                onChange={(
-                                                                                                    e: React.ChangeEvent<HTMLInputElement>
-                                                                                                ) => {
-                                                                                                    const [
-                                                                                                        hours,
-                                                                                                        minutes
-                                                                                                    ] =
-                                                                                                        e.target.value.split(
-                                                                                                            ':'
-                                                                                                        )
-                                                                                                    const newDate =
-                                                                                                        new Date(
-                                                                                                            editFormData.timeStart ||
-                                                                                                                new Date()
-                                                                                                        )
-                                                                                                    newDate.setHours(
-                                                                                                        parseInt(
-                                                                                                            hours
-                                                                                                        )
-                                                                                                    )
-                                                                                                    newDate.setMinutes(
-                                                                                                        parseInt(
-                                                                                                            minutes
-                                                                                                        )
-                                                                                                    )
-                                                                                                    setEditFormData(
-                                                                                                        {
-                                                                                                            ...editFormData,
-                                                                                                            timeStart:
-                                                                                                                newDate
-                                                                                                        }
-                                                                                                    )
-                                                                                                }}
-                                                                                                className="h-8 w-24"
-                                                                                            />
-                                                                                            {editFormErrors.timeStart && (
-                                                                                                <p className="text-xs text-red-500">
-                                                                                                    {
-                                                                                                        editFormErrors.timeStart
-                                                                                                    }
-                                                                                                </p>
+                                                                                        <span className="text-sm font-semibold text-brand">
+                                                                                            {formatTime(
+                                                                                                showTime.timeStart
                                                                                             )}
-                                                                                        </div>
-                                                                                        <div className="flex gap-1">
-                                                                                            <Button
-                                                                                                size="sm"
-                                                                                                onClick={(
-                                                                                                    e
-                                                                                                ) => {
-                                                                                                    e.preventDefault()
-                                                                                                    handleUpdateShowTime(
-                                                                                                        e
-                                                                                                    )
-                                                                                                }}
-                                                                                                disabled={
-                                                                                                    isUpdating
-                                                                                                }
-                                                                                                className="h-7 w-7 p-0 bg-[#e86d28] hover:bg-[#d35f1a] text-white"
-                                                                                            >
-                                                                                                ✓
-                                                                                            </Button>
-                                                                                            <Button
-                                                                                                size="sm"
-                                                                                                variant="outline"
-                                                                                                onClick={() => {
-                                                                                                    setEditingShowTime(
-                                                                                                        null
-                                                                                                    )
-                                                                                                    setEditFormErrors(
-                                                                                                        {}
-                                                                                                    )
-                                                                                                }}
-                                                                                                disabled={
-                                                                                                    isUpdating
-                                                                                                }
-                                                                                                className="h-7 w-7 p-0"
-                                                                                            >
-                                                                                                ✕
-                                                                                            </Button>
-                                                                                        </div>
+                                                                                        </span>
                                                                                     </div>
                                                                                 )
                                                                             }
-
-                                                                            return (
-                                                                                <div
-                                                                                    key={
-                                                                                        showTime.id
-                                                                                    }
-                                                                                    className="inline-flex items-center gap-2 bg-accent/50 border border-border px-3 py-1.5 rounded-md hover:bg-accent transition-colors"
-                                                                                >
-                                                                                    <span className="text-sm font-medium">
-                                                                                        {showTime
-                                                                                            .room
-                                                                                            ?.name ||
-                                                                                            'N/A'}
-                                                                                    </span>
-                                                                                    <span className="text-muted-foreground">
-                                                                                        -
-                                                                                    </span>
-                                                                                    <span className="text-sm font-semibold text-brand">
-                                                                                        {formatTime(
-                                                                                            showTime.timeStart
-                                                                                        )}
-                                                                                    </span>
-                                                                                </div>
-                                                                            )
-                                                                        }
-                                                                    )}
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="text-center">
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    onClick={() => {
-                                                                        navigate({
-                                                                            to: `${basePath}/show-times/${group.movie.id}?date=${selectedDate}`
-                                                                        })
-                                                                    }}
-                                                                    className="h-8 gap-2"
-                                                                >
-                                                                    <Eye className="w-4 h-4" />
-                                                                    View Details
-                                                                </Button>
-                                                            </TableCell>
-                                                        </TableRow>
+                                                                        )}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-center">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            navigate({
+                                                                                to: `${basePath}/show-times/${group.movie.id}?date=${selectedDate}`
+                                                                            })
+                                                                        }}
+                                                                        className="h-8 gap-2"
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                        View Details
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    })
+                                                } else {
+                                                    // Group showtimes by roomId
+                                                    const groupedByRoom = showTimes.reduce(
+                                                        (
+                                                            acc: Record<
+                                                                string,
+                                                                {
+                                                                    room: ShowTime['room']
+                                                                    showtimes: ShowTime[]
+                                                                }
+                                                            >,
+                                                            showTime
+                                                        ) => {
+                                                            const roomId =
+                                                                showTime.room?.id || 'no-room'
+                                                            if (!acc[roomId]) {
+                                                                acc[roomId] = {
+                                                                    room: showTime.room,
+                                                                    showtimes: []
+                                                                }
+                                                            }
+                                                            acc[roomId].showtimes.push(showTime)
+                                                            return acc
+                                                        },
+                                                        {}
                                                     )
-                                                })
+
+                                                    // Convert to array and sort by room name
+                                                    const roomGroups = Object.values(
+                                                        groupedByRoom
+                                                    ).sort((a, b) => {
+                                                        const nameA = a.room?.name || 'N/A'
+                                                        const nameB = b.room?.name || 'N/A'
+                                                        return nameA.localeCompare(nameB)
+                                                    })
+
+                                                    return roomGroups.map((group, groupIndex) => {
+                                                        // Sort showtimes within each group by time
+                                                        const sortedShowtimes =
+                                                            group.showtimes.sort(
+                                                                (a, b) =>
+                                                                    new Date(
+                                                                        a.timeStart
+                                                                    ).getTime() -
+                                                                    new Date(b.timeStart).getTime()
+                                                            )
+
+                                                        // Check if any showtime in this group is being edited
+                                                        const editingShowtimeInGroup =
+                                                            sortedShowtimes.find(
+                                                                (st) =>
+                                                                    editingShowTime?.id === st.id
+                                                            )
+
+                                                        return (
+                                                            <TableRow
+                                                                key={group.room?.id || 'no-room'}
+                                                                className={
+                                                                    editingShowtimeInGroup
+                                                                        ? 'bg-brand/10'
+                                                                        : ''
+                                                                }
+                                                            >
+                                                                <TableCell className="font-medium">
+                                                                    {groupIndex + 1}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className="font-medium text-lg">
+                                                                            {group.room?.name ||
+                                                                                'N/A'}
+                                                                        </span>
+                                                                        <span className="text-sm text-muted-foreground">
+                                                                            (
+                                                                            {group.showtimes.length}{' '}
+                                                                            sessions)
+                                                                        </span>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="grid grid-cols-3 gap-2">
+                                                                        {sortedShowtimes.map(
+                                                                            (showTime) => {
+                                                                                const isEditing =
+                                                                                    editingShowTime?.id ===
+                                                                                    showTime.id
+
+                                                                                if (isEditing) {
+                                                                                    return (
+                                                                                        <div
+                                                                                            key={
+                                                                                                showTime.id
+                                                                                            }
+                                                                                            className="inline-flex items-center gap-2 bg-brand/20 border border-brand px-3 py-1.5 rounded-md"
+                                                                                        >
+                                                                                            <div className="space-y-1">
+                                                                                                <Select
+                                                                                                    value={
+                                                                                                        editFormData.roomId
+                                                                                                    }
+                                                                                                    onValueChange={(
+                                                                                                        value
+                                                                                                    ) =>
+                                                                                                        setEditFormData(
+                                                                                                            {
+                                                                                                                ...editFormData,
+                                                                                                                roomId: value
+                                                                                                            }
+                                                                                                        )
+                                                                                                    }
+                                                                                                >
+                                                                                                    <SelectTrigger className="h-8 w-28">
+                                                                                                        <SelectValue placeholder="Room" />
+                                                                                                    </SelectTrigger>
+                                                                                                    <SelectContent className="bg-background/95 backdrop-blur-sm border-border">
+                                                                                                        {rooms.map(
+                                                                                                            (
+                                                                                                                room
+                                                                                                            ) => (
+                                                                                                                <SelectItem
+                                                                                                                    key={
+                                                                                                                        room.id
+                                                                                                                    }
+                                                                                                                    value={
+                                                                                                                        room.id
+                                                                                                                    }
+                                                                                                                    className="bg-background hover:bg-accent focus:bg-accent"
+                                                                                                                >
+                                                                                                                    {
+                                                                                                                        room.name
+                                                                                                                    }
+                                                                                                                </SelectItem>
+                                                                                                            )
+                                                                                                        )}
+                                                                                                    </SelectContent>
+                                                                                                </Select>
+                                                                                                {editFormErrors.roomId && (
+                                                                                                    <p className="text-xs text-red-500">
+                                                                                                        {
+                                                                                                            editFormErrors.roomId
+                                                                                                        }
+                                                                                                    </p>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <span className="text-muted-foreground">
+                                                                                                -
+                                                                                            </span>
+                                                                                            <div className="space-y-1">
+                                                                                                <Input
+                                                                                                    type="time"
+                                                                                                    value={formatTimeForInput(
+                                                                                                        editFormData.timeStart ||
+                                                                                                            new Date()
+                                                                                                    )}
+                                                                                                    onChange={(
+                                                                                                        e: React.ChangeEvent<HTMLInputElement>
+                                                                                                    ) => {
+                                                                                                        const [
+                                                                                                            hours,
+                                                                                                            minutes
+                                                                                                        ] =
+                                                                                                            e.target.value.split(
+                                                                                                                ':'
+                                                                                                            )
+                                                                                                        const newDate =
+                                                                                                            new Date(
+                                                                                                                editFormData.timeStart ||
+                                                                                                                    new Date()
+                                                                                                            )
+                                                                                                        newDate.setHours(
+                                                                                                            parseInt(
+                                                                                                                hours
+                                                                                                            )
+                                                                                                        )
+                                                                                                        newDate.setMinutes(
+                                                                                                            parseInt(
+                                                                                                                minutes
+                                                                                                            )
+                                                                                                        )
+                                                                                                        setEditFormData(
+                                                                                                            {
+                                                                                                                ...editFormData,
+                                                                                                                timeStart:
+                                                                                                                    newDate
+                                                                                                            }
+                                                                                                        )
+                                                                                                    }}
+                                                                                                    className="h-8 w-24"
+                                                                                                />
+                                                                                                {editFormErrors.timeStart && (
+                                                                                                    <p className="text-xs text-red-500">
+                                                                                                        {
+                                                                                                            editFormErrors.timeStart
+                                                                                                        }
+                                                                                                    </p>
+                                                                                                )}
+                                                                                            </div>
+                                                                                            <div className="flex gap-1">
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    onClick={(
+                                                                                                        e
+                                                                                                    ) => {
+                                                                                                        e.preventDefault()
+                                                                                                        handleUpdateShowTime(
+                                                                                                            e
+                                                                                                        )
+                                                                                                    }}
+                                                                                                    disabled={
+                                                                                                        isUpdating
+                                                                                                    }
+                                                                                                    className="h-7 w-7 p-0 bg-[#e86d28] hover:bg-[#d35f1a] text-white"
+                                                                                                >
+                                                                                                    ✓
+                                                                                                </Button>
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant="outline"
+                                                                                                    onClick={() => {
+                                                                                                        setEditingShowTime(
+                                                                                                            null
+                                                                                                        )
+                                                                                                        setEditFormErrors(
+                                                                                                            {}
+                                                                                                        )
+                                                                                                    }}
+                                                                                                    disabled={
+                                                                                                        isUpdating
+                                                                                                    }
+                                                                                                    className="h-7 w-7 p-0"
+                                                                                                >
+                                                                                                    ✕
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )
+                                                                                }
+
+                                                                                return (
+                                                                                    <div
+                                                                                        key={
+                                                                                            showTime.id
+                                                                                        }
+                                                                                        className="inline-flex items-center gap-2 bg-accent/50 border border-border px-3 py-1.5 rounded-md hover:bg-accent transition-colors"
+                                                                                    >
+                                                                                        <span className="text-sm font-medium">
+                                                                                            {showTime
+                                                                                                .movie
+                                                                                                ?.name ||
+                                                                                                'N/A'}
+                                                                                        </span>
+                                                                                        <span className="text-muted-foreground">
+                                                                                            -
+                                                                                        </span>
+                                                                                        <span className="text-sm font-semibold text-brand">
+                                                                                            {formatTime(
+                                                                                                showTime.timeStart
+                                                                                            )}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                )
+                                                                            }
+                                                                        )}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-center">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            // When grouping by room, navigate to room detail page
+                                                                            if (group.room?.id) {
+                                                                                navigate({
+                                                                                    to: `${basePath}/show-times/room/${group.room.id}?date=${selectedDate}`
+                                                                                })
+                                                                            }
+                                                                        }}
+                                                                        className="h-8 gap-2"
+                                                                    >
+                                                                        <Eye className="w-4 h-4" />
+                                                                        View Details
+                                                                    </Button>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )
+                                                    })
+                                                }
                                             })()}
                                         </TableBody>
                                     </Table>

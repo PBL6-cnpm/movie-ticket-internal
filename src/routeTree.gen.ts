@@ -3,6 +3,7 @@ import {
     adminRoute,
     adminSeatsRoute,
     adminShowTimeDetailRoute,
+    adminShowTimeRoomDetailRoute,
     adminShowTimesRoute,
     adminStaffAccountsRoute
 } from './features/admin/routes'
@@ -61,6 +62,7 @@ export const routeTree = rootRoute.addChildren([
     adminSeatsRoute,
     adminShowTimesRoute,
     adminShowTimeDetailRoute,
+    adminShowTimeRoomDetailRoute,
     adminStaffAccountsRoute,
     employeeRoute
 ])

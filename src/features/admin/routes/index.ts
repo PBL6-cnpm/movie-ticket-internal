@@ -11,5 +11,9 @@ export const ADMIN_STAFF_ACCOUNTS = 'staff-accounts'
 export { adminRoute } from './AdminRoute'
 export { adminRoomsRoute } from './RoomsRoute'
 export { adminSeatsRoute } from './SeatsRoute'
-export { adminShowTimeDetailRoute, adminShowTimesRoute } from './ShowTimeRoute'
+export {
+    adminShowTimeDetailRoute,
+    adminShowTimeRoomDetailRoute,
+    adminShowTimesRoute
+} from './ShowTimeRoute'
 export { adminStaffAccountsRoute } from './StaffAccountsRoute'
