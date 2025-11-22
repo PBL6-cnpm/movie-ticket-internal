@@ -1,6 +1,8 @@
 'use client'
 
+import { useNavigate } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
+import { useEffect } from 'react'
 import { useAuth } from '../hooks/auth.hook'
 import { hasRole } from '../utils/role.util'
 
@@ -16,6 +18,13 @@ const ProtectedRoute = ({
     fallback = <div>Access Denied</div>
 }: ProtectedRouteProps) => {
     const { account, isAuthenticated, isLoading } = useAuth()
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        if (!isLoading && !isAuthenticated) {
+            navigate({ to: '/login' })
+        }
+    }, [isAuthenticated, isLoading, navigate])
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-64">Loading...</div>

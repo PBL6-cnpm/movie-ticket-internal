@@ -1,8 +1,14 @@
+import { useAuth } from '@/features/auth/hooks/auth.hook'
 import { cn } from '@/lib/utils'
-import { logout } from '@/shared/api/auth-api'
 import { Link, useLocation } from '@tanstack/react-router'
 import React, { useEffect } from 'react'
-import { ADMIN_ROOMS, ADMIN_SHOW_TIMES, ADMIN_STAFF_ACCOUNTS, BASE_ADMIN } from '../routes'
+import {
+    ADMIN_REVENUE_STATISTICS,
+    ADMIN_ROOMS,
+    ADMIN_SHOW_TIMES,
+    ADMIN_STAFF_ACCOUNTS,
+    BASE_ADMIN
+} from '../routes'
 
 interface AdminNavItem {
     label: string
@@ -33,12 +39,27 @@ const addCustomAnimations = () => {
 
 const AdminSidebar: React.FC = () => {
     const location = useLocation()
+    const { logout } = useAuth()
 
     useEffect(() => {
         addCustomAnimations()
     }, [])
 
     const navItems: AdminNavItem[] = [
+        {
+            label: 'Revenue Statistics',
+            href: `/${BASE_ADMIN}/${ADMIN_REVENUE_STATISTICS}`,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                </svg>
+            )
+        },
         {
             label: 'Rooms Management',
             href: `/${BASE_ADMIN}/${ADMIN_ROOMS}`,
