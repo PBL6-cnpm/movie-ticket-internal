@@ -4,6 +4,7 @@ export interface MovieRevenue {
     totalRevenue: number
     totalBookings: number
     totalSeats: number
+    occupancyRate?: number
 }
 
 export interface MovieRevenueApiResponse {

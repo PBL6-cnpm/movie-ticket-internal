@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import React, { useEffect } from 'react'
-import { ADMIN_ROOMS, BASE_ADMIN } from '../routes'
+import { ADMIN_REVENUE_STATISTICS, BASE_ADMIN } from '../routes'
 import AdminSidebar from './AdminSidebar'
 
 const AdminDashboard: React.FC = () => {
@@ -8,9 +8,9 @@ const AdminDashboard: React.FC = () => {
     const navigate = useNavigate()
 
     useEffect(() => {
-        // If user is at /admin exactly, redirect to first menu item (rooms)
+        // If user is at /admin exactly, redirect to first menu item (revenue statistics)
         if (location.pathname === `/${BASE_ADMIN}` || location.pathname === `/${BASE_ADMIN}/`) {
-            navigate({ to: `/${BASE_ADMIN}/${ADMIN_ROOMS}` })
+            navigate({ to: `/${BASE_ADMIN}/${ADMIN_REVENUE_STATISTICS}` })
         }
     }, [location.pathname, navigate])
 

@@ -1,5 +1,5 @@
+import { useAuth } from '@/features/auth/hooks/auth.hook'
 import { cn } from '@/lib/utils'
-import { logout } from '@/shared/api/auth-api'
 import { Link, useLocation } from '@tanstack/react-router'
 import React, { useEffect } from 'react'
 import {
@@ -44,6 +44,7 @@ const addCustomAnimations = () => {
 
 const SuperAdminSidebar: React.FC = () => {
     const location = useLocation()
+    const { logout } = useAuth()
 
     useEffect(() => {
         addCustomAnimations()

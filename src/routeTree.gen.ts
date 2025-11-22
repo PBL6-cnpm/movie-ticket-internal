@@ -1,4 +1,5 @@
 import {
+    adminRevenueStatisticsRoute,
     adminRoomsRoute,
     adminRoute,
     adminSeatsRoute,
@@ -64,5 +65,6 @@ export const routeTree = rootRoute.addChildren([
     adminShowTimeDetailRoute,
     adminShowTimeRoomDetailRoute,
     adminStaffAccountsRoute,
+    adminRevenueStatisticsRoute,
     employeeRoute
 ])
