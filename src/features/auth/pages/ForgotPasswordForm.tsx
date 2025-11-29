@@ -318,7 +318,9 @@ const ForgotPasswordForm = () => {
 
                 {/* Footer */}
                 <div className="mt-8 text-center">
-                    <p className="text-xs text-secondary">© 2024 Cinestech. All rights reserved.</p>
+                    <p className="text-xs text-secondary">
+                        © 2024 Cinestech. All rights reserved.
+                    </p>
                 </div>
             </div>
         </div>
