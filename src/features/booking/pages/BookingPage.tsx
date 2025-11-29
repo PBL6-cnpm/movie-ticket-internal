@@ -38,6 +38,7 @@ const BookingPage: React.FC = () => {
 
     const [selectedSeats, setSelectedSeats] = useState<string[]>([])
     const [selectedRefreshments, setSelectedRefreshments] = useState<SelectedRefreshment[]>([])
+    const [phoneNumber, setPhoneNumber] = useState('')
     const [showVoucherModal, setShowVoucherModal] = useState(false)
     const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null)
     const [notification, setNotification] = useState<{
@@ -205,7 +206,8 @@ const BookingPage: React.FC = () => {
                 .map((item) => ({
                     refreshmentId: item.refreshment.id,
                     quantity: item.quantity
-                }))
+                })),
+            phoneNumber: phoneNumber || undefined
         }
 
         try {
@@ -508,6 +510,28 @@ const BookingPage: React.FC = () => {
                                                 </div>
                                             </div>
                                         </>
+                                    )}
+
+                                    {/* Customer Phone Number Input */}
+                                    {selectedSeats.length > 0 && (
+                                        <div className="border-t border-white/10 pt-6">
+                                            <h3 className="text-sm font-semibold text-[#fe7e32] mb-3">
+                                                Customer Info (Optional)
+                                            </h3>
+                                            <div className="space-y-2">
+                                                <input
+                                                    type="tel"
+                                                    placeholder="Customer Phone Number"
+                                                    value={phoneNumber}
+                                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                                    className="w-full bg-[#1a2232] border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-[#fe7e32] transition-colors"
+                                                />
+                                                <p className="text-xs text-gray-400">
+                                                    Enter phone number to accumulate points for the
+                                                    customer.
+                                                </p>
+                                            </div>
+                                        </div>
                                     )}
 
                                     {/* Voucher & Booking Button */}
