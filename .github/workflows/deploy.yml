@@ -1,0 +1,37 @@
+name: Deploy Web User
+
+on:
+    push:
+        branches: ['release']
+    workflow_dispatch:
+
+jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Install doctl
+              uses: digitalocean/action-doctl@v2
+              with:
+                  token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+            - name: Log in to DO Registry
+              run: doctl registry login --expiry-seconds 1200
+
+            - name: Build and Push Image
+              run: |
+                  docker build \
+                    --build-arg VITE_BASE_URL=${{ secrets.VITE_BASE_URL }} \
+                    --build-arg VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL }} \
+                    --build-arg VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }} \
+                    --build-arg VITE_GOOGLE_CLIENT_ID=${{ secrets.VITE_GOOGLE_CLIENT_ID }} \
+                    -t registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/internal:latest .
+
+                  docker push registry.digitalocean.com/${{ secrets.REGISTRY_NAME }}/internal:latest
+
+            - name: Deploy to Kubernetes
+              run: |
+                  doctl kubernetes cluster kubeconfig save ${{ secrets.CLUSTER_NAME }}
+                  kubectl rollout restart deployment/internal

@@ -33,6 +33,14 @@ import {
     typeSeatManageRoute
 } from './features/super-admin/routes'
 import { rootRoute } from './shared/routes/__root'
+import { bookingEntryRoute, bookingRoute } from './features/booking/routes/booking.route'
+import {
+    bookingsRoute,
+    reportsRoute,
+    scheduleRoute,
+    supportRoute
+} from './features/employee/dashboard/routes/dashboard.routes'
+import { paymentRoute, paymentSuccessRoute } from './features/payment/routes/payment.route'
 
 // Create the route tree
 export const routeTree = rootRoute.addChildren([
@@ -66,5 +74,14 @@ export const routeTree = rootRoute.addChildren([
     adminShowTimeRoomDetailRoute,
     adminStaffAccountsRoute,
     adminRevenueStatisticsRoute,
-    employeeRoute
+    employeeRoute.addChildren([
+        bookingRoute,
+        bookingEntryRoute,
+        reportsRoute,
+        supportRoute,
+        scheduleRoute,
+        bookingsRoute
+    ]),
+    paymentRoute,
+    paymentSuccessRoute
 ])

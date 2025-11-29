@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Outlet, useLocation } from '@tanstack/react-router'
 import React from 'react'
 import EmployeeSidebar from '../../components/EmployeeSidebar'
+import EmployeeHeader from '../../components/EmployeeHeader'
 
 const EmployeeDashboard = () => {
     const location = useLocation()
@@ -16,6 +17,7 @@ const EmployeeDashboard = () => {
             <EmployeeSidebar />
             {/* Main content area with left padding for sidebar */}
             <div className="ml-64">
+                <EmployeeHeader />
                 <div className="p-6">
                     {showDashboardContent ? <DashboardContent /> : <Outlet />}
                 </div>
