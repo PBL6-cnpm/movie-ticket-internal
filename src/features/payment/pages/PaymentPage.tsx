@@ -6,7 +6,6 @@ import { AlertCircle, CreditCard, Loader2, Wallet } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import CashPaymentModal from '../components/CashPaymentModal'
 import PaymentForm from '../components/PaymentForm'
-import { usePayment } from '../hooks/usePayment'
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -14,7 +13,8 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 const PaymentPage: React.FC = () => {
     const navigate = useNavigate()
     const bookingState = useBookingStore()
-    const { createPaymentIntent, clientSecret, error: paymentError, isLoading } = usePayment()
+    const { error: paymentError, isLoading } = { error: null, isLoading: false } // Placeholder or use separate state if needed
+    const [clientSecret, setClientSecret] = useState<string | null>(null)
     const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card')
     const [showCashModal, setShowCashModal] = useState(false)
 
@@ -30,12 +30,13 @@ const PaymentPage: React.FC = () => {
         }
     }, [bookingState, navigate])
 
-    // Create Payment Intent on mount if paying by card
+    // Retrieve client secret from session storage
     useEffect(() => {
-        if (bookingState.bookingId && paymentMethod === 'card' && !clientSecret) {
-            createPaymentIntent(bookingState.bookingId)
+        const storedClientSecret = sessionStorage.getItem('payment_client_secret')
+        if (storedClientSecret) {
+            setClientSecret(storedClientSecret)
         }
-    }, [bookingState.bookingId, paymentMethod, clientSecret, createPaymentIntent])
+    }, [])
 
     const handlePaymentSuccess = () => {
         bookingState.clearBookingState()
