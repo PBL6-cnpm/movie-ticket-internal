@@ -40,7 +40,7 @@ const PaymentPage: React.FC = () => {
 
     const handlePaymentSuccess = () => {
         bookingState.clearBookingState()
-        navigate({ to: '/payment/success' })
+        navigate({ to: '/payment/success', search: { payment_method: 'cash' } })
     }
 
     if (!bookingState.bookingId) {

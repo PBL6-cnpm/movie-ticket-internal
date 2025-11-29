@@ -7,53 +7,27 @@ import { useEffect, useState } from 'react'
 interface PaymentSuccessSearchParams {
     payment_intent?: string
     payment_intent_client_secret?: string
+    payment_method?: string
 }
-
-import { useVerifyPayment } from '../hooks/usePayment'
 
 export default function PaymentSuccessPage() {
     const navigate = useNavigate()
     const searchParams = useSearch({ strict: false }) as PaymentSuccessSearchParams
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-
-    const verifyPaymentMutation = useVerifyPayment()
     const bookingState = useBookingStore()
 
     useEffect(() => {
         const paymentIntent = searchParams?.payment_intent
         const paymentIntentClientSecret = searchParams?.payment_intent_client_secret
+        const paymentMethod = searchParams?.payment_method
 
-        if (!paymentIntent || !paymentIntentClientSecret) {
+        if ((paymentIntent && paymentIntentClientSecret) || paymentMethod === 'cash') {
+            setStatus('success')
+            bookingState.clearBookingState()
+        } else {
             setStatus('error')
-            return
         }
-
-        const verify = async () => {
-            try {
-                // Try to get bookingId from store if available, otherwise we might need to rely on backend lookup or pass it in URL
-                // For now, assuming user just came from booking flow
-                const bookingId = bookingState.bookingId
-
-                if (bookingId) {
-                    await verifyPaymentMutation.mutateAsync({
-                        bookingId,
-                        paymentIntentId: paymentIntent
-                    })
-                }
-
-                setStatus('success')
-                useBookingStore.getState().clearBookingState()
-            } catch (error) {
-                console.error('Payment verification failed:', error)
-                // Even if verification fails (e.g. network), if we have the params, we show success but maybe warn?
-                // Or we show error. Let's show success but log error for now as fallback
-                setStatus('success')
-                useBookingStore.getState().clearBookingState()
-            }
-        }
-
-        verify()
-    }, [searchParams, bookingState.bookingId, verifyPaymentMutation])
+    }, [searchParams, bookingState])
 
     if (status === 'loading') {
         return (

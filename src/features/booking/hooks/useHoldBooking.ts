@@ -17,6 +17,7 @@ export interface HoldBookingPayload {
         refreshmentId: string
         quantity: number
     }>
+    phoneNumber?: string
 }
 
 export interface HoldBookingData {
