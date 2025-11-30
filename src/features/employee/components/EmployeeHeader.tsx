@@ -9,30 +9,23 @@ const EmployeeHeader: React.FC = () => {
     const { data: branches = [] } = useBranches(true)
     const { selectedBranchId, setSelectedBranchId } = useEmployeeStore()
 
+    React.useEffect(() => {
+        if (user?.branchId && user.branchId !== selectedBranchId) {
+            setSelectedBranchId(user.branchId)
+        }
+    }, [user, selectedBranchId, setSelectedBranchId])
+
+    const currentBranch = branches.find((b) => b.id === user?.branchId)
+
     return (
         <header className="bg-[var(--brand-surface)] border-b border-gray-700/50 h-16 px-6 flex items-center justify-between sticky top-0 z-30 shadow-md">
-            {/* Left side: Branch Selector */}
+            {/* Left side: Branch Info */}
             <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-gray-400 bg-[#1a2232] px-3 py-1.5 rounded-lg border border-gray-700/50 hover:border-[var(--brand-primary)] transition-colors">
+                <div className="flex items-center gap-2 text-gray-400 bg-[#1a2232] px-3 py-1.5 rounded-lg border border-gray-700/50">
                     <MapPin className="w-4 h-4 text-[var(--brand-primary)]" />
-                    <select
-                        value={selectedBranchId || ''}
-                        onChange={(e) => setSelectedBranchId(e.target.value || null)}
-                        className="bg-transparent border-none focus:ring-0 text-sm font-medium text-gray-200 min-w-[150px] cursor-pointer"
-                    >
-                        <option value="" className="bg-[#1a2232] text-gray-200">
-                            Select Branch
-                        </option>
-                        {branches.map((branch) => (
-                            <option
-                                key={branch.id}
-                                value={branch.id}
-                                className="bg-[#1a2232] text-gray-200"
-                            >
-                                {branch.name}
-                            </option>
-                        ))}
-                    </select>
+                    <span className="text-sm font-medium text-gray-200">
+                        {currentBranch?.name || 'Loading Branch...'}
+                    </span>
                 </div>
             </div>
 

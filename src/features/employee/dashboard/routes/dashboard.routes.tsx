@@ -1,9 +1,9 @@
 import { employeeRoute } from '@/features/employee/dashboard/routes/EmployeeRoute'
 import { createRoute } from '@tanstack/react-router'
-import ReportsPage from '../pages/ReportsPage'
-import SupportPage from '../pages/SupportPage'
-import SchedulePage from '../pages/SchedulePage'
 import BookingsPage from '../pages/BookingsPage'
+import ReportsPage from '../pages/ReportsPage'
+import SchedulePage from '../pages/SchedulePage'
+import SupportPage from '../pages/SupportPage'
 
 export const reportsRoute = createRoute({
     getParentRoute: () => employeeRoute,
