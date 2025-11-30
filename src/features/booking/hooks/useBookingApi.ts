@@ -377,4 +377,99 @@ export const useBranchShowTimes = (branchId: string, options?: { pageSize?: numb
     })
 }
 
+export interface Booking {
+    id: string
+    bookingPrice: number
+    totalBookingPrice: number
+    dateTimeBooking: string
+    status: string
+    showTime: {
+        movie: {
+            name: string
+        }
+        room: {
+            name: string
+        }
+        timeStart: string
+        timeEnd: string
+        showDate: string
+    }
+    seats: Array<{
+        id: string
+        name: string
+        typeSeat: {
+            id: string
+            name: string
+        }
+        room: {
+            id: string
+            name: string
+        }
+    }>
+    account?: {
+        id: string
+        fullName: string
+        email: string
+        phoneNumber: string | null
+        avatarUrl: string | null
+        coin: number
+        roleNames: string[]
+    }
+}
+
+interface BranchBookingsResponse {
+    success: boolean
+    data: {
+        items: Booking[]
+        meta: {
+            totalItems: number
+            itemCount: number
+            itemsPerPage: number
+            totalPages: number
+            currentPage: number
+        }
+    }
+}
+
+const fetchBranchBookings = async (
+    page: number,
+    limit: number,
+    search?: string,
+    date?: string,
+    startDate?: string,
+    endDate?: string
+): Promise<BranchBookingsResponse['data']> => {
+    const response = await apiClient.get<BranchBookingsResponse>('/bookings/branch', {
+        params: {
+            page,
+            limit,
+            search,
+            date,
+            startDate,
+            endDate
+        }
+    })
+
+    if (response.data.success) {
+        return response.data.data
+    }
+
+    throw new Error('Failed to fetch branch bookings')
+}
+
+export const useBranchBookings = (
+    page: number,
+    limit: number,
+    search?: string,
+    date?: string,
+    startDate?: string,
+    endDate?: string
+) => {
+    return useQuery({
+        queryKey: ['branchBookings', page, limit, search, date, startDate, endDate],
+        queryFn: () => fetchBranchBookings(page, limit, search, date, startDate, endDate),
+        staleTime: 1000 * 60 // 1 minute
+    })
+}
+
 export type { Branch, BranchMovie, BranchShowTimesItem, ShowTime, ShowTimeDay }
