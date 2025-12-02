@@ -18,24 +18,31 @@ function PaymentSuccessPageContent() {
     const clearBookingState = useBookingStore((state) => state.clearBookingState)
 
     useEffect(() => {
+        let timeoutId: NodeJS.Timeout
+
         try {
             const paymentIntent = searchParams?.payment_intent
             const paymentIntentClientSecret = searchParams?.payment_intent_client_secret
             const paymentMethod = searchParams?.payment_method
 
+            // For successful payments, immediately show success without API calls
             if ((paymentIntent && paymentIntentClientSecret) || paymentMethod === 'cash') {
                 setStatus('success')
-                // Clear booking state after a small delay to ensure component is fully mounted
-                const timeoutId = setTimeout(() => {
+
+                // Clear booking state after component is fully rendered
+                timeoutId = setTimeout(() => {
                     try {
+                        // Clear session storage items related to payment
+                        sessionStorage.removeItem('payment_client_secret')
+                        sessionStorage.removeItem('booking_id')
+                        sessionStorage.removeItem('booking_total_price')
+
+                        // Clear booking store state
                         clearBookingState()
                     } catch (error) {
                         console.error('Error clearing booking state:', error)
                     }
-                }, 100)
-
-                // Cleanup timeout on unmount
-                return () => clearTimeout(timeoutId)
+                }, 500) // Increased delay to ensure everything is properly loaded
             } else {
                 setStatus('error')
             }
@@ -43,8 +50,14 @@ function PaymentSuccessPageContent() {
             console.error('Error in payment verification:', error)
             setStatus('error')
         }
-    }, [searchParams, clearBookingState])
 
+        // Cleanup function
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+        }
+    }, [searchParams, clearBookingState])
     if (status === 'loading') {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -99,7 +112,29 @@ function PaymentSuccessPageContent() {
 
 export default function PaymentSuccessPage() {
     return (
-        <ErrorBoundary>
+        <ErrorBoundary
+            fallback={
+                <div className="container mx-auto px-4 py-8 max-w-2xl">
+                    <div className="text-center">
+                        <div className="mb-6">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                                <span className="text-red-600 text-3xl">⚠</span>
+                            </div>
+                        </div>
+                        <h1 className="text-xl font-semibold text-gray-900 mb-2">
+                            Payment Processing
+                        </h1>
+                        <p className="text-gray-600 mb-4">
+                            Your payment was successful, but we're having trouble displaying the
+                            confirmation. Your booking has been completed.
+                        </p>
+                        <Button onClick={() => (window.location.href = '/staff/booking/new')}>
+                            Continue Booking
+                        </Button>
+                    </div>
+                </div>
+            }
+        >
             <PaymentSuccessPageContent />
         </ErrorBoundary>
     )
