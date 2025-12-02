@@ -1,7 +1,7 @@
 import { useBookingStore } from '@/features/booking/stores/booking.store'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import Button from '@/shared/components/ui/button'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useSearch } from '@tanstack/react-router'
 import { CheckCircle, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
@@ -12,7 +12,6 @@ interface PaymentSuccessSearchParams {
 }
 
 function PaymentSuccessPageContent() {
-    const navigate = useNavigate()
     const searchParams = useSearch({ strict: false }) as PaymentSuccessSearchParams
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
     const clearBookingState = useBookingStore((state) => state.clearBookingState)
@@ -29,7 +28,7 @@ function PaymentSuccessPageContent() {
             if ((paymentIntent && paymentIntentClientSecret) || paymentMethod === 'cash') {
                 setStatus('success')
 
-                // Clear booking state after component is fully rendered
+                // Clear booking state and redirect after showing success message
                 timeoutId = setTimeout(() => {
                     try {
                         // Clear session storage items related to payment
@@ -39,10 +38,15 @@ function PaymentSuccessPageContent() {
 
                         // Clear booking store state
                         clearBookingState()
+
+                        // Redirect to staff dashboard
+                        window.location.href = 'https://admin.cinestech.me/staff'
                     } catch (error) {
                         console.error('Error clearing booking state:', error)
+                        // Still redirect even if cleanup fails
+                        window.location.href = 'https://admin.cinestech.me/staff'
                     }
-                }, 500) // Increased delay to ensure everything is properly loaded
+                }, 2000) // Show success for 2 seconds before redirect
             } else {
                 setStatus('error')
             }
@@ -82,8 +86,10 @@ function PaymentSuccessPageContent() {
                     <p className="text-gray-600 mb-8">
                         There was an issue processing your payment. Please try again.
                     </p>
-                    <Button onClick={() => navigate({ to: '/staff/booking/new' })}>
-                        Back to Booking
+                    <Button
+                        onClick={() => (window.location.href = 'https://admin.cinestech.me/staff')}
+                    >
+                        Back to Staff Dashboard
                     </Button>
                 </div>
             </div>
@@ -100,9 +106,15 @@ function PaymentSuccessPageContent() {
                 <p className="text-gray-600 mb-8">
                     Thank you for your payment. Your booking has been confirmed.
                 </p>
+                <p className="text-sm text-blue-600 mb-6">
+                    Redirecting you to staff dashboard in 2 seconds...
+                </p>
                 <div className="space-y-4">
-                    <Button onClick={() => navigate({ to: '/' })} className="w-full sm:w-auto">
-                        Back to Dashboard
+                    <Button
+                        onClick={() => (window.location.href = 'https://admin.cinestech.me/staff')}
+                        className="w-full sm:w-auto"
+                    >
+                        Go to Staff Dashboard
                     </Button>
                 </div>
             </div>
@@ -128,8 +140,12 @@ export default function PaymentSuccessPage() {
                             Your payment was successful, but we're having trouble displaying the
                             confirmation. Your booking has been completed.
                         </p>
-                        <Button onClick={() => (window.location.href = '/staff/booking/new')}>
-                            Continue Booking
+                        <Button
+                            onClick={() =>
+                                (window.location.href = 'https://admin.cinestech.me/staff')
+                            }
+                        >
+                            Continue to Staff Dashboard
                         </Button>
                     </div>
                 </div>
