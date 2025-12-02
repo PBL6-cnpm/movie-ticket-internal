@@ -132,7 +132,10 @@ const errorInterceptor = async (error: AxiosError) => {
 
                 // Don't auto-logout on payment success page to prevent interrupting user experience
                 const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-                const isPaymentSuccessPage = currentPath.includes('/payment/success')
+                const currentHref = typeof window !== 'undefined' ? window.location.href : ''
+                const isPaymentSuccessPage =
+                    currentPath.includes('/payment/success') ||
+                    currentHref.includes('/payment/success')
 
                 if (!isPaymentSuccessPage) {
                     // If refresh token fails, log out user
@@ -143,6 +146,11 @@ const errorInterceptor = async (error: AxiosError) => {
                     if (typeof window !== 'undefined') {
                         window.location.href = '/login'
                     }
+                } else {
+                    // On payment success page, just log the error without logging out
+                    console.warn(
+                        'Token refresh failed on payment success page, but not logging out to preserve user experience'
+                    )
                 }
 
                 return Promise.reject(refreshError)
