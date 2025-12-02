@@ -1,7 +1,8 @@
+import { useBookingStore } from '@/features/booking/stores/booking.store'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import Button from '@/shared/components/ui/button'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { CheckCircle, Loader2 } from 'lucide-react'
-import { useBookingStore } from '@/features/booking/stores/booking.store'
 import { useEffect, useState } from 'react'
 
 interface PaymentSuccessSearchParams {
@@ -10,24 +11,39 @@ interface PaymentSuccessSearchParams {
     payment_method?: string
 }
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessPageContent() {
     const navigate = useNavigate()
     const searchParams = useSearch({ strict: false }) as PaymentSuccessSearchParams
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-    const bookingState = useBookingStore()
+    const clearBookingState = useBookingStore((state) => state.clearBookingState)
 
     useEffect(() => {
-        const paymentIntent = searchParams?.payment_intent
-        const paymentIntentClientSecret = searchParams?.payment_intent_client_secret
-        const paymentMethod = searchParams?.payment_method
+        try {
+            const paymentIntent = searchParams?.payment_intent
+            const paymentIntentClientSecret = searchParams?.payment_intent_client_secret
+            const paymentMethod = searchParams?.payment_method
 
-        if ((paymentIntent && paymentIntentClientSecret) || paymentMethod === 'cash') {
-            setStatus('success')
-            bookingState.clearBookingState()
-        } else {
+            if ((paymentIntent && paymentIntentClientSecret) || paymentMethod === 'cash') {
+                setStatus('success')
+                // Clear booking state after a small delay to ensure component is fully mounted
+                const timeoutId = setTimeout(() => {
+                    try {
+                        clearBookingState()
+                    } catch (error) {
+                        console.error('Error clearing booking state:', error)
+                    }
+                }, 100)
+
+                // Cleanup timeout on unmount
+                return () => clearTimeout(timeoutId)
+            } else {
+                setStatus('error')
+            }
+        } catch (error) {
+            console.error('Error in payment verification:', error)
             setStatus('error')
         }
-    }, [searchParams, bookingState])
+    }, [searchParams, clearBookingState])
 
     if (status === 'loading') {
         return (
@@ -78,5 +94,13 @@ export default function PaymentSuccessPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function PaymentSuccessPage() {
+    return (
+        <ErrorBoundary>
+            <PaymentSuccessPageContent />
+        </ErrorBoundary>
     )
 }
