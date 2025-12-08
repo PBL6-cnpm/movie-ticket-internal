@@ -130,13 +130,27 @@ const errorInterceptor = async (error: AxiosError) => {
                 // Process queued requests with error
                 processQueue(refreshError, null)
 
-                // If refresh token fails, log out user
-                const { logout } = useAuthStore.getState()
-                logout()
+                // Don't auto-logout on payment success page to prevent interrupting user experience
+                const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+                const currentHref = typeof window !== 'undefined' ? window.location.href : ''
+                const isPaymentSuccessPage =
+                    currentPath.includes('/payment/success') ||
+                    currentHref.includes('/payment/success')
 
-                // Redirect to login page
-                if (typeof window !== 'undefined') {
-                    window.location.href = '/login'
+                if (!isPaymentSuccessPage) {
+                    // If refresh token fails, log out user
+                    const { logout } = useAuthStore.getState()
+                    logout()
+
+                    // Redirect to login page
+                    if (typeof window !== 'undefined') {
+                        window.location.href = '/login'
+                    }
+                } else {
+                    // On payment success page, just log the error without logging out
+                    console.warn(
+                        'Token refresh failed on payment success page, but not logging out to preserve user experience'
+                    )
                 }
 
                 return Promise.reject(refreshError)

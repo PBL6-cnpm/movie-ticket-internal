@@ -21,41 +21,31 @@ interface BookingStore extends BookingState {
     clearBookingState: () => void
 }
 
+const initialState: BookingState = {
+    branchId: undefined,
+    movieId: undefined,
+    date: undefined,
+    showtimeId: undefined,
+    redirectUrl: undefined,
+    bookingId: undefined,
+    movieName: undefined,
+    branchName: undefined,
+    time: undefined,
+    selectedSeats: undefined,
+    refreshments: undefined,
+    totalPrice: undefined
+}
+
 export const useBookingStore = create<BookingStore>()(
     persist(
         (set) => ({
-            branchId: undefined,
-            movieId: undefined,
-            date: undefined,
-            showtimeId: undefined,
-            redirectUrl: undefined,
-            bookingId: undefined,
-            movieName: undefined,
-            branchName: undefined,
-            time: undefined,
-            selectedSeats: undefined,
-            refreshments: undefined,
-            totalPrice: undefined,
+            ...initialState,
             setBookingState: (state) =>
                 set((prev) => ({
                     ...prev,
                     ...state
                 })),
-            clearBookingState: () =>
-                set({
-                    branchId: undefined,
-                    movieId: undefined,
-                    date: undefined,
-                    showtimeId: undefined,
-                    redirectUrl: undefined,
-                    bookingId: undefined,
-                    movieName: undefined,
-                    branchName: undefined,
-                    time: undefined,
-                    selectedSeats: undefined,
-                    refreshments: undefined,
-                    totalPrice: undefined
-                })
+            clearBookingState: () => set(() => initialState)
         }),
         {
             name: 'booking-storage',

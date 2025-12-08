@@ -1,7 +1,8 @@
-import Button from '@/shared/components/ui/button'
-import { useNavigate, useSearch } from '@tanstack/react-router'
-import { CheckCircle, Loader2 } from 'lucide-react'
 import { useBookingStore } from '@/features/booking/stores/booking.store'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
+import Button from '@/shared/components/ui/button'
+import { useSearch } from '@tanstack/react-router'
+import { CheckCircle, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface PaymentSuccessSearchParams {
@@ -10,25 +11,57 @@ interface PaymentSuccessSearchParams {
     payment_method?: string
 }
 
-export default function PaymentSuccessPage() {
-    const navigate = useNavigate()
+function PaymentSuccessPageContent() {
     const searchParams = useSearch({ strict: false }) as PaymentSuccessSearchParams
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-    const bookingState = useBookingStore()
+    const clearBookingState = useBookingStore((state) => state.clearBookingState)
 
     useEffect(() => {
-        const paymentIntent = searchParams?.payment_intent
-        const paymentIntentClientSecret = searchParams?.payment_intent_client_secret
-        const paymentMethod = searchParams?.payment_method
+        let timeoutId: NodeJS.Timeout
 
-        if ((paymentIntent && paymentIntentClientSecret) || paymentMethod === 'cash') {
-            setStatus('success')
-            bookingState.clearBookingState()
-        } else {
+        try {
+            const paymentIntent = searchParams?.payment_intent
+            const paymentIntentClientSecret = searchParams?.payment_intent_client_secret
+            const paymentMethod = searchParams?.payment_method
+
+            // For successful payments, immediately show success without API calls
+            if ((paymentIntent && paymentIntentClientSecret) || paymentMethod === 'cash') {
+                setStatus('success')
+
+                // Clear booking state and redirect after showing success message
+                timeoutId = setTimeout(() => {
+                    try {
+                        // Clear session storage items related to payment
+                        sessionStorage.removeItem('payment_client_secret')
+                        sessionStorage.removeItem('booking_id')
+                        sessionStorage.removeItem('booking_total_price')
+
+                        // Clear booking store state
+                        clearBookingState()
+
+                        // Redirect to staff dashboard
+                        window.location.href = 'https://admin.cinestech.me/staff'
+                    } catch (error) {
+                        console.error('Error clearing booking state:', error)
+                        // Still redirect even if cleanup fails
+                        window.location.href = 'https://admin.cinestech.me/staff'
+                    }
+                }, 2000) // Show success for 2 seconds before redirect
+            } else {
+                setStatus('error')
+            }
+        } catch (error) {
+            console.error('Error in payment verification:', error)
             setStatus('error')
         }
-    }, [searchParams, bookingState])
 
+        // Cleanup function
+        return () => {
+            if (timeoutId) {
+                clearTimeout(timeoutId)
+            }
+        }
+    }, [searchParams, clearBookingState])
     if (status === 'loading') {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -53,8 +86,10 @@ export default function PaymentSuccessPage() {
                     <p className="text-gray-600 mb-8">
                         There was an issue processing your payment. Please try again.
                     </p>
-                    <Button onClick={() => navigate({ to: '/staff/booking/new' })}>
-                        Back to Booking
+                    <Button
+                        onClick={() => (window.location.href = 'https://admin.cinestech.me/staff')}
+                    >
+                        Back to Staff Dashboard
                     </Button>
                 </div>
             </div>
@@ -71,12 +106,52 @@ export default function PaymentSuccessPage() {
                 <p className="text-gray-600 mb-8">
                     Thank you for your payment. Your booking has been confirmed.
                 </p>
+                <p className="text-sm text-blue-600 mb-6">
+                    Redirecting you to staff dashboard in 2 seconds...
+                </p>
                 <div className="space-y-4">
-                    <Button onClick={() => navigate({ to: '/' })} className="w-full sm:w-auto">
-                        Back to Dashboard
+                    <Button
+                        onClick={() => (window.location.href = 'https://admin.cinestech.me/staff')}
+                        className="w-full sm:w-auto"
+                    >
+                        Go to Staff Dashboard
                     </Button>
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function PaymentSuccessPage() {
+    return (
+        <ErrorBoundary
+            fallback={
+                <div className="container mx-auto px-4 py-8 max-w-2xl">
+                    <div className="text-center">
+                        <div className="mb-6">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                                <span className="text-red-600 text-3xl">⚠</span>
+                            </div>
+                        </div>
+                        <h1 className="text-xl font-semibold text-gray-900 mb-2">
+                            Payment Processing
+                        </h1>
+                        <p className="text-gray-600 mb-4">
+                            Your payment was successful, but we're having trouble displaying the
+                            confirmation. Your booking has been completed.
+                        </p>
+                        <Button
+                            onClick={() =>
+                                (window.location.href = 'https://admin.cinestech.me/staff')
+                            }
+                        >
+                            Continue to Staff Dashboard
+                        </Button>
+                    </div>
+                </div>
+            }
+        >
+            <PaymentSuccessPageContent />
+        </ErrorBoundary>
     )
 }
