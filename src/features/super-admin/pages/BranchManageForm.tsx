@@ -28,7 +28,7 @@ import {
 import { showDeleteConfirm } from '@/shared/utils/confirm'
 import { showToast } from '@/shared/utils/toast'
 import { useNavigate } from '@tanstack/react-router'
-import { Calendar, Edit2, Eye, MoreHorizontal, Trash2, Users } from 'lucide-react'
+import { BookOpen, Calendar, Edit2, Eye, MoreHorizontal, Trash2, Users } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 
 const BranchManageForm: React.FC = () => {
@@ -264,6 +264,32 @@ const BranchManageForm: React.FC = () => {
             if (response.success) {
                 showToast.success(`Switched to branch: ${branch.name}`)
                 navigate({ to: '/super-admin/staff-accounts' })
+            } else {
+                throw new Error(response.message || 'Failed to update branch')
+            }
+        } catch (error) {
+            console.error('Error updating branch:', error)
+            showToast.error('An error occurred while switching branch')
+        }
+    }
+
+    const handleViewBookings = async (branch: Branch) => {
+        if (!account) {
+            showToast.error('Account information not found')
+            return
+        }
+
+        try {
+            setActiveDropdown(null)
+
+            // Update account's branch - only send branchId
+            const response = await updateAccount(account.id, {
+                branchId: branch.id
+            })
+
+            if (response.success) {
+                showToast.success(`Switched to branch: ${branch.name}`)
+                navigate({ to: '/super-admin/bookings' })
             } else {
                 throw new Error(response.message || 'Failed to update branch')
             }
@@ -582,6 +608,18 @@ const BranchManageForm: React.FC = () => {
                                                                         >
                                                                             <Users className="w-4 h-4 text-yellow-400" />
                                                                             View Staff Accounts
+                                                                        </button>
+                                                                        <div className="border-t border-surface my-1" />
+                                                                        <button
+                                                                            onClick={() =>
+                                                                                handleViewBookings(
+                                                                                    branch
+                                                                                )
+                                                                            }
+                                                                            className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-cyan-500 hover:text-white flex items-center gap-2 transition-all duration-200 ease-in-out"
+                                                                        >
+                                                                            <BookOpen className="w-4 h-4 text-cyan-400" />
+                                                                            View Bookings
                                                                         </button>
                                                                         <div className="border-t border-surface my-1" />
                                                                         <button

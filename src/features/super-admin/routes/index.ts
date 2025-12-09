@@ -1,4 +1,5 @@
 export * from './AdminAccountManage'
+export * from './BookingsRoute'
 export * from './BranchManage'
 export * from './MoviesManage'
 export * from './RefreshmentManage'
