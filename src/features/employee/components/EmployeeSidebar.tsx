@@ -88,6 +88,20 @@ const EmployeeSidebar: React.FC = () => {
             )
         },
         {
+            label: 'Customer Accounts',
+            href: '/staff/user-accounts',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5.121 17.804A4 4 0 017 11h10a4 4 0 011.879 6.804M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                </svg>
+            )
+        },
+        {
             label: 'Movie Schedule',
             href: '/staff/schedule',
             icon: (

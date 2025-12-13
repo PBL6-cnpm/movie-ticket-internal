@@ -1,3 +1,7 @@
+import { AccountStatus } from '@/shared/types/account.types'
+
+export { AccountStatus }
+
 export interface UpdateAccountRequest {
     fullName?: string
     email?: string
@@ -34,11 +38,6 @@ export interface AdminAccount {
     status: AccountStatus
     createdAt: string
     updatedAt: string
-}
-
-export enum AccountStatus {
-    ACTIVE = 'active',
-    DELETED = 'deleted'
 }
 
 export interface AdminAccount {
