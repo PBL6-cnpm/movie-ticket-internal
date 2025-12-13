@@ -11,11 +11,11 @@ export const staffAccountApi = {
     getAll: async (params?: {
         limit?: number
         offset?: number
+        search?: string
     }): Promise<StaffAccountListResponse> => {
         const response = await apiClient.get<StaffAccountListResponse>('/accounts/staff', {
             params
         })
-        console.log(response.data)
         return response.data
     },
 

@@ -6,7 +6,9 @@ import {
     adminShowTimeDetailRoute,
     adminShowTimeRoomDetailRoute,
     adminShowTimesRoute,
-    adminStaffAccountsRoute
+    adminStaffAccountsRoute,
+    adminUserAccountDetailRoute,
+    adminUserAccountsRoute
 } from './features/admin/routes'
 import { forgotPasswordRoute } from './features/auth/routes/ForgotPassword'
 import { homeRoute, loginRoute } from './features/auth/routes/Login'
@@ -18,6 +20,8 @@ import {
     bookingsRoute,
     reportsRoute,
     scheduleRoute,
+    staffUserAccountDetailRoute,
+    staffUserAccountsRoute,
     supportRoute
 } from './features/employee/dashboard/routes/dashboard.routes'
 import { employeeRoute } from './features/employee/dashboard/routes/EmployeeRoute'
@@ -39,6 +43,8 @@ import {
     superAdminSpecialDateRoute,
     superAdminStaffAccountsRoute,
     superAdminTypeDayRoute,
+    superAdminUserAccountDetailRoute,
+    superAdminUserAccountsRoute,
     typeSeatManageRoute
 } from './features/super-admin/routes'
 import { rootRoute } from './shared/routes/__root'
@@ -66,6 +72,8 @@ export const routeTree = rootRoute.addChildren([
     superAdminShowTimeDetailRoute,
     superAdminStaffAccountsRoute,
     superAdminBookingsRoute,
+    superAdminUserAccountsRoute,
+    superAdminUserAccountDetailRoute,
     superAdminReportRoute,
     refreshmentManageRoute,
     adminRoute,
@@ -75,6 +83,8 @@ export const routeTree = rootRoute.addChildren([
     adminShowTimeDetailRoute,
     adminShowTimeRoomDetailRoute,
     adminStaffAccountsRoute,
+    adminUserAccountsRoute,
+    adminUserAccountDetailRoute,
     adminRevenueStatisticsRoute,
     employeeRoute.addChildren([
         bookingRoute,
@@ -82,7 +92,9 @@ export const routeTree = rootRoute.addChildren([
         reportsRoute,
         supportRoute,
         scheduleRoute,
-        bookingsRoute
+        bookingsRoute,
+        staffUserAccountsRoute,
+        staffUserAccountDetailRoute
     ]),
     paymentRoute,
     paymentSuccessRoute

@@ -12,7 +12,8 @@ import {
     SUPER_ADMIN_ROLE,
     SUPER_ADMIN_SPECIAL_DATE,
     SUPER_ADMIN_TYPE_DAY,
-    SUPER_ADMIN_TYPE_SEATS
+    SUPER_ADMIN_TYPE_SEATS,
+    SUPER_ADMIN_USER_ACCOUNTS
 } from '../routes'
 
 interface SuperAdminNavItem {
@@ -89,6 +90,20 @@ const SuperAdminSidebar: React.FC = () => {
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                </svg>
+            )
+        },
+        {
+            label: 'User Accounts',
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_USER_ACCOUNTS}`,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5.121 17.804A4 4 0 017 11h10a4 4 0 011.879 6.804M15 7a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                 </svg>
             )
