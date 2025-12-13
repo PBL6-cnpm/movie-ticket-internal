@@ -13,7 +13,8 @@ import {
     SUPER_ADMIN_SPECIAL_DATE,
     SUPER_ADMIN_TYPE_DAY,
     SUPER_ADMIN_TYPE_SEATS,
-    SUPER_ADMIN_USER_ACCOUNTS
+    SUPER_ADMIN_USER_ACCOUNTS,
+    SUPER_ADMIN_VOUCHERS
 } from '../routes'
 
 interface SuperAdminNavItem {
@@ -177,6 +178,20 @@ const SuperAdminSidebar: React.FC = () => {
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"
+                    />
+                </svg>
+            )
+        },
+        {
+            label: 'Voucher Management',
+            href: `/${BASE_SUPER_ADMIN}/${SUPER_ADMIN_VOUCHERS}`,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
                     />
                 </svg>
             )
