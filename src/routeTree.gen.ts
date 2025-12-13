@@ -13,7 +13,15 @@ import { homeRoute, loginRoute } from './features/auth/routes/Login'
 import { registerRoute } from './features/auth/routes/Register'
 import { emailVerificationSuccessRoute } from './features/auth/routes/RequireEmailVerification'
 import { verifyEmailSuccessRoute } from './features/auth/routes/VerifyEmailSuccess'
+import { bookingEntryRoute, bookingRoute } from './features/booking/routes/booking.route'
+import {
+    bookingsRoute,
+    reportsRoute,
+    scheduleRoute,
+    supportRoute
+} from './features/employee/dashboard/routes/dashboard.routes'
 import { employeeRoute } from './features/employee/dashboard/routes/EmployeeRoute'
+import { paymentRoute, paymentSuccessRoute } from './features/payment/routes/payment.route'
 import {
     adminAccountManageRoute,
     branchManageRoute,
@@ -21,6 +29,7 @@ import {
     moviesManageRoute,
     refreshmentManageRoute,
     roleManageRoute,
+    superAdminBookingsRoute,
     superAdminReportRoute,
     superAdminRoomsRoute,
     superAdminRoute,
@@ -33,14 +42,6 @@ import {
     typeSeatManageRoute
 } from './features/super-admin/routes'
 import { rootRoute } from './shared/routes/__root'
-import { bookingEntryRoute, bookingRoute } from './features/booking/routes/booking.route'
-import {
-    bookingsRoute,
-    reportsRoute,
-    scheduleRoute,
-    supportRoute
-} from './features/employee/dashboard/routes/dashboard.routes'
-import { paymentRoute, paymentSuccessRoute } from './features/payment/routes/payment.route'
 
 // Create the route tree
 export const routeTree = rootRoute.addChildren([
@@ -64,6 +65,7 @@ export const routeTree = rootRoute.addChildren([
     superAdminShowTimesRoute,
     superAdminShowTimeDetailRoute,
     superAdminStaffAccountsRoute,
+    superAdminBookingsRoute,
     superAdminReportRoute,
     refreshmentManageRoute,
     adminRoute,
