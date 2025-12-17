@@ -2,6 +2,7 @@ export interface Movie {
     id: string
     name: string
     poster: string
+    duration?: number
 }
 
 export interface Room {
