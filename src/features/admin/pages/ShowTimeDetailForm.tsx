@@ -30,17 +30,20 @@ import type {
     UpdateShowTimeRequest
 } from '@/shared/types/showtime.types'
 import { showToast } from '@/shared/utils/toast'
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
+import { useLocation, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { ArrowLeft, Calendar, Check, Clock, Edit, Plus, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 const ShowTimeDetailPage = () => {
     const navigate = useNavigate()
+    const location = useLocation()
     const params = useParams({ strict: false }) as { movieId?: string }
     const searchParams = useSearch({ strict: false })
     const dateQuery = (searchParams as { date?: string })?.date
     const date = dateQuery || new Date().toISOString().split('T')[0]
     const movieId = params.movieId
+
+    const basePath = location.pathname.includes('super-admin') ? '/super-admin' : '/admin'
 
     const [showTimes, setShowTimes] = useState<ShowTime[]>([])
     const [loading, setLoading] = useState(true)
@@ -314,7 +317,7 @@ const ShowTimeDetailPage = () => {
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate({ to: '/admin/show-times' })}
+                    onClick={() => navigate({ to: `${basePath}/show-times` as const })}
                     className="w-fit pl-0 hover:bg-transparent hover:text-primary transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />
