@@ -25,7 +25,7 @@ import type {
     UpdateShowTimeRequest
 } from '@/shared/types/showtime.types'
 import { showToast } from '@/shared/utils/toast'
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
+import { useLocation, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import {
     ArrowLeft,
     Calendar,
@@ -216,10 +216,13 @@ const PaginatedMovieSelect = ({
 
 const ShowTimeRoomDetailPage = () => {
     const navigate = useNavigate()
+    const location = useLocation()
     const params = useParams({ strict: false }) as { roomId?: string }
     const searchParams = useSearch({ strict: false })
     const date = (searchParams as { date?: string })?.date || new Date().toISOString().split('T')[0]
     const roomId = params.roomId
+
+    const basePath = location.pathname.includes('super-admin') ? '/super-admin' : '/admin'
 
     const [showTimes, setShowTimes] = useState<ShowTime[]>([])
     const [loading, setLoading] = useState(true)
@@ -490,7 +493,7 @@ const ShowTimeRoomDetailPage = () => {
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate({ to: '/admin/show-times' })}
+                    onClick={() => navigate({ to: `${basePath}/show-times` as const })}
                     className="w-fit pl-0 hover:bg-transparent hover:text-primary transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

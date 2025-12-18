@@ -388,7 +388,7 @@ export default function MovieDetailPage() {
                                                 </div>
                                                 <div className="flex items-center">
                                                     <span className="text-yellow-400 font-bold text-sm">
-                                                        {review.rating}/5 ⭐
+                                                        {review.rating}/10 ⭐
                                                     </span>
                                                 </div>
                                             </div>
