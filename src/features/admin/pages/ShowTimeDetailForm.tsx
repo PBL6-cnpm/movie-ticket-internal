@@ -461,6 +461,15 @@ const ShowTimeDetailPage = () => {
                                                     value={formatTimeForInput(
                                                         createFormData.timeStart
                                                     )}
+                                                    onKeyDown={(e) => {
+                                                        // Ngăn xóa giá trị bằng Backspace hoặc Delete
+                                                        if (
+                                                            e.key === 'Backspace' ||
+                                                            e.key === 'Delete'
+                                                        ) {
+                                                            e.preventDefault()
+                                                        }
+                                                    }}
                                                     onChange={(e) => {
                                                         const [h, m] = e.target.value.split(':')
                                                         const d = new Date(
@@ -568,6 +577,15 @@ const ShowTimeDetailPage = () => {
                                                                     value={formatTimeForInput(
                                                                         editFormData.timeStart
                                                                     )}
+                                                                    onKeyDown={(e) => {
+                                                                        // Ngăn xóa giá trị bằng Backspace hoặc Delete
+                                                                        if (
+                                                                            e.key === 'Backspace' ||
+                                                                            e.key === 'Delete'
+                                                                        ) {
+                                                                            e.preventDefault()
+                                                                        }
+                                                                    }}
                                                                     onChange={(e) => {
                                                                         const [h, m] =
                                                                             e.target.value.split(
