@@ -539,36 +539,6 @@ const RoleManageForm: React.FC = () => {
                                 )
                             )}
                         </div>
-
-                        {hasChanges && (
-                            <div className="mt-6 p-4 bg-brand border border-primary/30">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <div className="w-2 h-2 bg-brand-primary rounded-full mr-2"></div>
-                                        <span className="text-sm font-medium text-brand-primary">
-                                            Có thay đổi chưa được lưu
-                                        </span>
-                                    </div>
-                                    <div className="flex space-x-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleResetChanges}
-                                            className="border-surface text-secondary hover:bg-surface hover:text-primary"
-                                        >
-                                            Hủy
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            onClick={handleSaveChanges}
-                                            className="btn-primary hover:bg-[#e86d28] hover:shadow-lg hover:shadow-[#fe7e32]/30"
-                                        >
-                                            Lưu thay đổi
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
             )}
